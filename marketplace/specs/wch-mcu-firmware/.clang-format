@@ -1,0 +1,50 @@
+# .clang-format — WCH MCU 固件项目
+#
+# 部署位置：项目根目录（不是 .trellis/spec/ 下）
+# 作用：强制统一 Tab 缩进、大括号风格、case 顶格等格式约定
+# 集成：MounRiver Studio 装 CDT clang-format 插件可自动格式化；也可命令行 clang-format -i
+#
+# 调整原则：改这里之前先和项目负责人确认，格式变更影响全仓库 diff
+
+Language: C
+
+# 缩进：统一 Tab
+UseTab: Always
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+
+# 大括号：Allman（开括号另起一行），与现有代码多数一致
+BreakBeforeBraces: Allman
+
+# case 顶格，不缩进 case 标签
+IndentCaseLabels: false
+IndentCaseBlocks: false
+
+# 不强制行宽（现有代码有长行不折，避免大规模重排）
+ColumnLimit: 0
+
+# 指针/引用贴变量名
+PointerAlignment: Right
+
+# 单行 if/else 不强制加括号
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Empty
+
+# 函数声明/定义参数对齐
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+
+# 空行
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+
+# include 排序：不自动重排（避免打乱厂商头顺序）
+IncludeBlocks: Preserve
+SortIncludes: false
+
+# 命名空间/宏块：C 不用，保留默认
