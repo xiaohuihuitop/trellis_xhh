@@ -100,7 +100,11 @@ xhh_Task_Flash_Save_User_Data(&g_xhh_user_data);
 ## 持久化边界
 
 - 持久化集中在 `xhh_Task_Flash.*`，其他模块（Motor/BAT/Timeout）不直接调 `Flash_Write`
-- 其他模块通过 `Update_User_Data` / `Update_Flash_Data` 与持久化层交互
+- `xhh_Task_Flash` 模块**只做整体管理**：`Get_Flash` / `Set_Flash` / `Clean` / `IS_Valid` / `Init` / `DeInit` / `Cmd`
+- **禁止在 Flash 模块内放单字段 Save 接口**（如 `Save_Temp_Max` / `Save_BAT` / `Save_Level`...）——这些由业务模块在自己的 .c 里实现
+- 单字段 Save 接口（业务模块内）**只更新 RAM**（`g_xhh_user_data.xxx = value`），**不立即写 Flash**；整体写 Flash 由关机流程集中调用
+- 需要立即持久化的场景（如设置即生效）：调用方直接 `g_xhh_user_data.xxx = value; xhh_Task_Flash_User_Data_Set_Flash(&g_xhh_user_data);`
+- 读取直接用 `g_xhh_user_data.xxx`，不用函数接口
 - OTA 标志单独存固定地址（如 `OTA_DATAFLASH_ADD`），不进用户数据结构体
 
 ---

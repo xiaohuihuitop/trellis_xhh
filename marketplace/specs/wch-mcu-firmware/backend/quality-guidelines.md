@@ -18,17 +18,36 @@
 
 历史文件若有文件头注释（Eclipse CDT 模板），改动时顺手删掉。
 
+### TODO 注释（强制）
+
+需要用户后续补充或修改的地方，用 `TODO` 标注。**`TODO` 必须在注释行的最前面**，便于 grep 全局定位。
+
+```c
+// 正确
+//TODO 标定温度阈值
+//TODO: VCC 需确认
+
+// 错误（TODO 在中间，grep 难定位）
+//这是阈值 TODO 后续标定
+//xxx TODO xxx
+```
+
+约定：
+- `//TODO` 或 `//TODO:` 开头（`//` 后紧跟 `TODO`，可加冒号）
+- 一行只标注一个 TODO 事项
+- 不要把 TODO 嵌在多行注释的中间段落
+
 ---
 
 ## 文件编码（强制）
 
-本项目历史 `.c/.h` 文件是 **GBK 编码**（MounRiver Studio 默认）。新编辑的文件接受 **UTF-8**。项目允许 GBK/UTF-8 混合，但**绝不允许乱码**。
+本项目 `.c/.h` 文件编码**固定为 UTF-8**。
 
-**⚠ AI 工具陷阱**：opencode 的 `edit` / `write` / `read` 工具按 UTF-8 读写文件。直接对 GBK 文件用 `edit` 会把全文件中文注释破坏成乱码（GBK 字节被当 UTF-8 解析后重写）。
+**⚠ AI 工具陷阱**：opencode 的 `edit` / `write` / `read` 工具按 UTF-8 读写文件。直接对非 UTF-8 文件（如历史 GBK 文件）用 `edit` 会把全文件中文注释破坏成乱码（GBK 字节被当 UTF-8 解析后重写）。
 
-**编辑 GBK 文件的强制流程**（转码 → 编辑 → 保持 UTF-8，不转回 GBK）：
+**编辑非 UTF-8 文件的强制流程**（转码 → 编辑，不转回原编码）：
 
-1. **改前转码**：用 PowerShell 把目标文件 GBK → UTF-8（保留 CRLF）：
+1. **改前转码**：若目标文件不是 UTF-8（如 GBK），先用 PowerShell 转成 UTF-8 保存：
    ```powershell
    $gbk = [System.Text.Encoding]::GetEncoding(936)
    $utf8 = [System.Text.Encoding]::UTF8
@@ -38,12 +57,12 @@
    [System.IO.File]::WriteAllBytes($path, $utf8.GetBytes($t))  # 写 UTF-8
    ```
 2. **用 `edit` / `write` 工具修改**（此时文件已是 UTF-8，工具安全）
-3. **改后保持 UTF-8**：不再转回 GBK（用户接受 UTF-8）
+3. **改后保持 UTF-8**：不转回原编码
 4. **验证**：UTF-8 解码中文正常 + CRLF 行数 = 总行数、LF = 0
 
 **新建文件**：直接用 `write` 工具（默认 UTF-8）即可，无需转码。
 
-**子代理约束**：dispatch `trellis-implement` / `trellis-check` 时，prompt 里必须告知"本项目 .c/.h 可能是 GBK 编码，编辑前先用 PowerShell 转 UTF-8（GetEncoding(936)），禁止直接对 GBK 文件用 edit/write 工具"。
+**子代理约束**：dispatch `trellis-implement` / `trellis-check` 时，prompt 里必须告知"本项目 .c/.h 编码固定 UTF-8，编辑前若发现文件非 UTF-8（如 GBK），先用 PowerShell 转 UTF-8 保存再修改，禁止直接对非 UTF-8 文件用 edit/write 工具"。
 
 **行尾**：保持 CRLF（`core.autocrlf=true`，git 仓库存 LF，工作区 CRLF）。
 
