@@ -20,6 +20,35 @@
 
 ---
 
+## 文件编码（强制）
+
+本项目历史 `.c/.h` 文件是 **GBK 编码**（MounRiver Studio 默认）。新编辑的文件接受 **UTF-8**。项目允许 GBK/UTF-8 混合，但**绝不允许乱码**。
+
+**⚠ AI 工具陷阱**：opencode 的 `edit` / `write` / `read` 工具按 UTF-8 读写文件。直接对 GBK 文件用 `edit` 会把全文件中文注释破坏成乱码（GBK 字节被当 UTF-8 解析后重写）。
+
+**编辑 GBK 文件的强制流程**（转码 → 编辑 → 保持 UTF-8，不转回 GBK）：
+
+1. **改前转码**：用 PowerShell 把目标文件 GBK → UTF-8（保留 CRLF）：
+   ```powershell
+   $gbk = [System.Text.Encoding]::GetEncoding(936)
+   $utf8 = [System.Text.Encoding]::UTF8
+   $b = [System.IO.File]::ReadAllBytes($path)
+   $t = $gbk.GetString($b)                    # GBK 字节 -> 字符串
+   $t = $t.Replace("`r`n","`n").Replace("`n","`r`n")  # 统一 CRLF
+   [System.IO.File]::WriteAllBytes($path, $utf8.GetBytes($t))  # 写 UTF-8
+   ```
+2. **用 `edit` / `write` 工具修改**（此时文件已是 UTF-8，工具安全）
+3. **改后保持 UTF-8**：不再转回 GBK（用户接受 UTF-8）
+4. **验证**：UTF-8 解码中文正常 + CRLF 行数 = 总行数、LF = 0
+
+**新建文件**：直接用 `write` 工具（默认 UTF-8）即可，无需转码。
+
+**子代理约束**：dispatch `trellis-implement` / `trellis-check` 时，prompt 里必须告知"本项目 .c/.h 可能是 GBK 编码，编辑前先用 PowerShell 转 UTF-8（GetEncoding(936)），禁止直接对 GBK 文件用 edit/write 工具"。
+
+**行尾**：保持 CRLF（`core.autocrlf=true`，git 仓库存 LF，工作区 CRLF）。
+
+---
+
 ## 必须遵守
 
 - 分层链路稳定：协议入口 → 事件 → 状态机 → Task 模块（见各 pattern 文件）
