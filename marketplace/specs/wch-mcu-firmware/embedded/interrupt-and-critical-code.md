@@ -1,138 +1,104 @@
 # 中断与关键码
 
-> 中断处理函数和关键性能函数应放在 RAM 中执行以提速。具体段名/属性语法依 MCU 而定，核心思想是"让高频/时敏代码跑在 RAM 而非 Flash"。
+> 本 spec 约束"业务代码怎么对待中断"的跨平台原则。具体中断属性语法、调度机制、临界区 API 依 MCU/平台,本 spec 不写死。
 
 ---
 
-## RAM 执行原则
+## 中断默认短小(原则)
 
-- 中断处理函数和时敏关键函数放 RAM 执行段
-- WCH RISC-V 上用：`__attribute__((interrupt("WCH-Interrupt-fast")))` + `__attribute__((section(".highcode")))`
-- 其他 MCU 用对应语法（如 `__attribute__((section(".ramfunc")))`、`IRAM_ATTR` 等）
-- 模板里只写原则，具体属性宏在项目 init 时按 MCU 填入
+中断函数默认只做:清标志 / 计数 / 置标志位。
+
+业务逻辑(事件处理、状态机推进、Flash 操作)必须在主循环跑,不进中断。
+
+---
+
+## 两类允许的例外
+
+### 例外 1:时敏输出(允许)
+
+us~ms 级必须立即响应的输出,可以在中断里直接调对应输出函数:
+
+- Motor PWM 输出(`xhh_Task_Motor_Out()`)
+- LED 呼吸刷新(`xhh_Task_LED_Loop()`)
+- LCD 刷新
+
+理由:主循环 10ms 周期不够快,这类输出天然属于中断职责。
+
+### 例外 2:安全关断(允许部分)
+
+EXTI 检测到危险(短路/过流/紧急停机)时:
+- ✅ 中断里**可以立即关硬件 GPIO**(防止硬件继续损坏)
+- ✅ 中断里**可以 `xhh_Event_Trigger(xhh_Event_ERR, ...)` 产生事件**
+- ❌ 中断里**不可 `xhh_Event_Handle()` 处理事件**——Handle 必须在主循环跑
+
+即:中断可以"先关硬件 + 把 ERR 事件挂上",但事件的处理(切状态机、关各 Task 模块)留给主循环下一个 10ms 周期。
+
+---
+
+## 中断里禁止(不论平台)
+
+- ❌ Flash 擦写(耗时阻塞中断)
+- ❌ 协议帧解析(在主循环出队后做)
+- ❌ `xhh_Event_Handle()`(事件分发必须在主循环)
+- ❌ 大块数据处理 / 长循环
+- ❌ 复杂状态机推进(`xhh_SYS_Handle` 在主循环)
+
+---
+
+## 中断/主循环共享数据
+
+- 共享变量加 `volatile`:
 
 ```c
-// APP/main_task.c:291-313（WCH CH573 示例）
-__attribute__((interrupt("WCH-Interrupt-fast")))
-__attribute__((section(".highcode")))
-void TMR0_IRQHandler(void)
-{
-    if (TMR0_GetITFlag(TMR0_3_IT_CYC_END)) {
-        TMR0_ClearITFlag(TMR0_3_IT_CYC_END);
-        ...
-    }
-}
-```
-
----
-
-## 中断里只做什么
-
-中断函数必须**极轻量**，只做：
-
-- 清中断标志
-- 计数 / 置标志位
-- 极轻量输出（LED 呼吸、Motor PWM 输出、HoldPP）
-
-```c
-// APP/main_task.c:291-313
-TMR0_ClearITFlag(TMR0_3_IT_CYC_END);   // 清标志
-tim_count++;                           // 计数
-        xhh_Task_LED_Loop();                   // 100us 跑 led
-if (tim_count >= 10) {                 // 1ms
-    tim_count = 0;
-    xhh_Task_Motor_Out();              // 1ms 跑 motor pwm
-}
-```
-
----
-
-## 中断里禁止做什么
-
-- ❌ 协议解析（帧解析在主循环出队后做）
-- ❌ 事件触发（`xhh_Event_Trigger` 在主循环/事件层调）
-- ❌ Flash 读写（擦写耗时且可能阻塞中断）
-- ❌ 复杂状态机推进
-- ❌ 长循环 / 大块数据处理
-
----
-
-## 中断与主循环的数据共享
-
-- 共享变量加 `volatile`
-
-```c
-// APP/main_task.c:17
-volatile uint16_t tim_count = 0;          // 中断写、主循环读
-
-// xhh_Module/xhh_Mode/xhh_Mode.c:28
+volatile uint16_t tim_count = 0;       // 中断写、主循环读
 volatile uint8_t motor_start_flag = 0;
 ```
 
-- 重入保护用运行标志
+- 重入保护用运行标志:
 
 ```c
-// xhh_Module/xhh_Task/xhh_Task_ADC.c:22
-uint8_t xhh_Task_ADC_Run_Flag = 0;   // 主循环采集前置1、结束置0，中断先判断避免重入
-// 注释：中断中需要先判断才使用adc.否则冲突,可能死循环
+uint8_t xhh_Task_ADC_Run_Flag = 0;    // 主循环采集前置1、结束置0,中断先判断避免重入
 ```
 
-- GPIO 唤醒中断只清标志，不做任何业务：
-
-```c
-// APP/main_task.c:315-328
-void GPIOB_IRQHandler(void) { GPIOB_ClearITFlagBit(GPIO_Pin_12); }
-```
+- 多中断共享资源:优先用标志位延迟到主循环处理,不在中断里嵌套处理。
 
 ---
 
-## 主循环调度（TMOS，WCH 特有）
+## RAM 执行(不约束)
 
-> TMOS 是 WCH BLE 协议栈自带的事件调度机制。其他 MCU 平台用对应的 RTOS 或裸 `while(1)` 轮询；本节调度思路（周期事件位 + 自重启）通用，但 API 名不通用。
+中断函数和时敏关键函数是否放 RAM 执行段,由项目按 MCU/中断频率/Flash 速度自定。本 spec 不强制。
 
-本项目主循环走厂商 TMOS 事件调度，不是裸 `while(1)` 轮询：
+参考:WCH RISC-V 常用 `__attribute__((section(".highcode")))`,PY32 可不强制。具体语法按平台。
+
+---
+
+## 主循环调度(平台自定,本 spec 不约束)
+
+主循环调度方式随平台不同:
+
+### WCH/TMOS
 
 ```c
-// APP/main.c:38-44
-__attribute__((section(".highcode"))) __attribute__((noinline))
-void Main_Circulation() {
-    while(1) { TMOS_SystemProcess(); }
+while(1) { TMOS_SystemProcess(); }   // TMOS 事件位 + tmos_start_task 自重启
+// 事件返回: return (events ^ MAIN_10MS_EVT);
+```
+
+### PY32/裸机
+
+```c
+while(1) {
+    if (systick_flag_10ms) { systick_flag_10ms = 0; ... }   // tick flag 轮询
 }
+// SysTick 中断只置 flag,主循环消费
 ```
 
-事件位定义与周期任务：
-
-```c
-// APP/main_task.h:15-27
-#define MAIN_START_EVT  (0x0001<<0)
-#define MAIN_10MS_EVT   (0x0001<<2)
-#define MAIN_100MS_EVT  (0x0001<<3)
-#define MAIN_1S_EVT     (0x0001<<4)
-```
-
-**事件返回约定**：处理完一位事件用异或清除该位；周期任务在 case 末尾再次 `tmos_start_task` 自重启：
-
-```c
-// APP/main_task.c:165-166
-tmos_start_task(MAIN_TaskID, MAIN_10MS_EVT);   // 重启周期
-return (events ^ MAIN_10MS_EVT);               // 清除已处理位
-```
-
-末尾 `return 0;` 表示无未处理事件（`main_task.c:190`）。
-
----
-
-## 中断优先级与临界区
-
-- 临界区保护按 MCU 提供 API（WCH 用 `sys_safe_access_enable` / 关中断等）
-- 中断优先级配置在初始化阶段一次性设好，运行时不动态改
-- 多中断共享资源时，用标志位延迟到主循环处理，而不是在中断里嵌套处理
+两种平台都遵循同一原则:**主循环里调 `xhh_Event_Handle()` + `xhh_SYS_Handle()` + 各 `xhh_Task_*_Loop()`**。具体调度机制由平台定。
 
 ---
 
 ## 初始化后应补充的项目事实
 
-- 本项目 MCU 的 RAM 执行段属性宏
-- 实际使用的中断向量清单与优先级
-- 临界区保护 API
-- TMOS 事件位清单与周期
+- 本项目 MCU 的中断向量清单与优先级
+- 临界区保护 API(具体函数名)
+- 主循环调度机制(TMOS / tick flag / 其他)
+- 是否启用 RAM 执行段
