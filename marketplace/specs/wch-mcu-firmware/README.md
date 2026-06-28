@@ -13,7 +13,7 @@
 ### 分层架构
 协议入口 → 事件分发 → 状态机 → Task 模块 → BSP 支撑。厂商层（SRC/HAL/LIB/Profile）不改源码，只调 config.h。
 
-### 核心模式（见 backend/ 各 pattern 文件）
+### 核心模式（见 embedded/ 各 pattern 文件）
 - **命名约定**：`xhh_` 前缀 + snake_case + 缩写词全大写 + `_t` 后缀 + 头文件保护 `__XHH_<MODULE>_H__`
 - **Task 模块四件套**：`_Init/_DeInit/_Cmd(uint8_t)/_Loop` + static volatile 使能位 + Loop 首句守卫 + `xhh_Task_ALL.h` 聚合
 - **状态机**：枚举状态 + 子步(Entry/Ing/Done) + Loop_Count + 单 switch + 集中 `xhh_SYS_Change`
@@ -39,7 +39,7 @@ wch-mcu-firmware/
 │   ├── xhh_Event_Template.c/.h
 │   ├── xhh_Mode_Template.c
 │   └── xhh_Task_Flash_Template.c
-├── backend/                      # 固件规范
+├── embedded/                     # 固件规范
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
 │   ├── task-module-pattern.md    # Task 模块四件套
@@ -75,7 +75,7 @@ trellis init --registry <仓库地址> --template wch-mcu-firmware
 初始化后：
 1. 把 `.clang-format` 从 `.trellis/spec/` 复制到**项目根目录**
 2. 把 `examples/` 从 `.trellis/spec/` 移到**项目根目录**（Trellis 扫 spec 层时不把 examples 当规范层）
-3. 把 backend/guides 里"项目事实占位"换成真实值
+3. 把 embedded/guides 里"项目事实占位"换成真实值
 4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
 
 ## 维护约定
@@ -83,4 +83,4 @@ trellis init --registry <仓库地址> --template wch-mcu-firmware
 - 模板里放的是"可复用的工程约定"，不是某一个仓库的全部细节
 - 具体项目初始化后，继续在自己的 `.trellis/spec/` 里本地演化
 - 文档用中文
-- 新增模式/指南时，先补文件，再同步更新 `backend/index.md` 或 `guides/index.md`
+- 新增模式/指南时，先补文件，再同步更新 `embedded/index.md` 或 `guides/index.md`
