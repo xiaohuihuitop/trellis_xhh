@@ -33,8 +33,14 @@
 wch-mcu-firmware/
 ├── .clang-format                 # 格式配置（部署到项目根目录）
 ├── README.md                     # 本文件
+├── examples/                     # 代码骨架（部署到项目根目录，不进 .trellis/spec/）
+│   ├── README.md
+│   ├── xhh_Task_Template.c/.h
+│   ├── xhh_Event_Template.c/.h
+│   ├── xhh_Mode_Template.c
+│   └── xhh_Task_Flash_Template.c
 ├── backend/                      # 固件规范
-│   ├── index.md                  # 索引
+│   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
 │   ├── task-module-pattern.md    # Task 模块四件套
 │   ├── state-machine-pattern.md  # 状态机范式
@@ -46,7 +52,7 @@ wch-mcu-firmware/
 │   ├── logging-guidelines.md     # 日志规范
 │   └── quality-guidelines.md     # 质量规范（格式/验证/提交/Review）
 └── guides/                       # 思考指南
-    ├── index.md
+    ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
     ├── protocol-event-state-task-flow.md  # 核心链路推导
     ├── isr-vs-main-loop.md                # 中断 vs 主循环
     ├── flash-data-layout.md               # Flash 数据布局
@@ -67,9 +73,10 @@ trellis init --registry <仓库地址> --template wch-mcu-firmware
 ```
 
 初始化后：
-1. 把 `.clang-format` 复制到项目根目录
-2. 把 backend/guides 里"项目事实占位"换成真实值
-3. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
+1. 把 `.clang-format` 从 `.trellis/spec/` 复制到**项目根目录**
+2. 把 `examples/` 从 `.trellis/spec/` 移到**项目根目录**（Trellis 扫 spec 层时不把 examples 当规范层）
+3. 把 backend/guides 里"项目事实占位"换成真实值
+4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
 
 ## 维护约定
 

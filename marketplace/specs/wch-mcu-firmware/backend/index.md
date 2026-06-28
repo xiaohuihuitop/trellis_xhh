@@ -42,7 +42,7 @@
 
 ### 示例代码骨架（直接套用）
 
-新建模块时复制 `../examples/` 下对应骨架,改名填逻辑即可。见 [examples/README.md](../examples/README.md)。
+新建模块时复制**项目根 `examples/`** 下对应骨架,改名填逻辑即可。spec 不放代码文件,骨架代码作为独立目录随项目维护。`trellis init` 后需手动把模板根的 `examples/` 复制到项目根。
 
 | 骨架 | 用途 |
 |------|------|
@@ -50,6 +50,41 @@
 | `xhh_Event_Template.c/.h` | 事件枚举 + Trigger + Handle 骨架 |
 | `xhh_Mode_Template.c` | 状态机枚举 + Change + Handle 骨架 |
 | `xhh_Task_Flash_Template.c` | Flash 结构体 + Get/Save/IS_Valid/Clean 骨架 |
+
+---
+
+## Pre-Development Checklist（动手前必读）
+
+写任何固件代码前，按顺序确认：
+
+- [ ] **定位改动落哪一层**：读 [../guides/protocol-event-state-task-flow.md](../guides/protocol-event-state-task-flow.md) 的决策树，确认这段逻辑该放协议/事件/状态机/Task/中断哪一层
+- [ ] **命名**：新标识符加 `xhh_` 前缀、缩写词全大写（LED/ADC/BLE）、类型 `_t` 后缀——见 [naming-conventions.md](./naming-conventions.md)
+- [ ] **若是新 Task 模块**：规划四件套（`_Init/_DeInit/_Cmd/_Loop`）+ `static volatile` 使能位 + Loop 守卫 + 注册 `xhh_Task_ALL.h`——见 [task-module-pattern.md](./task-module-pattern.md)
+- [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine-pattern.md](./state-machine-pattern.md)
+- [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
+- [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt-and-critical-code.md](./interrupt-and-critical-code.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
+- [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash-guidelines.md](./flash-guidelines.md)
+- [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality-guidelines.md](./quality-guidelines.md) 文件编码章节
+- [ ] **新建文件**：直接用 `write` 工具（默认 UTF-8），无文件头注释，Tab 缩进，`__XHH_<MODULE>_H__` 头文件保护
+- [ ] **要套骨架**：从项目根 `examples/` 复制对应骨架，全局替换 `Template` → 模块名
+
+---
+
+## Quality Check（完成后必验）
+
+代码写完，提交前逐项确认：
+
+- [ ] **编译通过**：MounRiver Studio / RISC-V GCC 编译无错
+- [ ] **产物生成**：`.hex` / `.bin` 产出 + post-build CRC 通过
+- [ ] **格式**：Tab 缩进、缩写词全大写、无文件头注释、`.clang-format` 无报错——见 [quality-guidelines.md](./quality-guidelines.md) Review Checklist
+- [ ] **分层链路**：改动是否走了 协议→事件→状态机→Task 链路，有没有绕过事件层直接跨模块调
+- [ ] **状态一致性**：事件 case 内多模块联动是否一次性设置完，没有状态改一半
+- [ ] **守卫**：Task `_Loop` 首句 `if (en == 0) return;` 在；参数 `if (NULL) return` 在
+- [ ] **中断禁区**：中断里没有协议解析/事件触发/Flash 读写
+- [ ] **持久化**：Flash 读写经 `xhh_Task_Flash`，没散写 `Flash_Write`；新字段加了 `IS_Valid` + `Clean` 默认值 + 双向 `Update`
+- [ ] **路径审查**：涉及协议/状态机/持久化的改动，确认完整读写链路而非只看单函数
+- [ ] **TODO 注释**：遗留 TODO 用 `//TODO` 行首格式，便于 grep
+- [ ] **调试残留**：没有遗留的 `XHH_DEBUG` 高频日志、测试 hook、编译开关忘关
 
 ---
 
