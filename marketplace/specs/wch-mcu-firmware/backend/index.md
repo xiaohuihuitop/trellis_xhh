@@ -40,6 +40,17 @@
 |------|------|
 | [质量规范](./quality-guidelines.md) | 格式（Tab/.clang-format/无文件头）、验证、提交、Review 清单 |
 
+### 示例代码骨架（直接套用）
+
+新建模块时复制 `../examples/` 下对应骨架,改名填逻辑即可。见 [examples/README.md](../examples/README.md)。
+
+| 骨架 | 用途 |
+|------|------|
+| `xhh_Task_Template.c/.h` | Task 模块四件套完整模板 |
+| `xhh_Event_Template.c/.h` | 事件枚举 + Trigger + Handle 骨架 |
+| `xhh_Mode_Template.c` | 状态机枚举 + Change + Handle 骨架 |
+| `xhh_Task_Flash_Template.c` | Flash 结构体 + Get/Save/IS_Valid/Clean 骨架 |
+
 ---
 
 ## 使用建议
