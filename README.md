@@ -2,6 +2,12 @@
 
 这是一个给 Trellis 使用的自定义 Spec Template Marketplace 仓库。
 
+> **路径约定（务必先读）**
+> - 本仓库选择了把 `index.json` 放在 `marketplace/` 子目录（而非仓库根）这种合法布局。
+> - `marketplace/index.json` 的 `templates[].path` 字段**相对的是仓库根目录**，不是 `index.json` 所在目录；本仓库固定写 `marketplace/specs/<id>`。
+> - 如果你把本仓库 fork 后搬到别处或拆分目录，**必须同步校准 `path`**，否则 `trellis init --registry` 会在拉取时报 "template path not found"。
+> - 验证命令：`Test-Path marketplace/specs/embedded/README.md`（路径存在即对得上）。
+
 目标：
 
 - 为 MCU 固件类项目提供可复用的 `.trellis/spec/` 初始模板
@@ -79,6 +85,7 @@ trellis init --registry gh:<你的账号>/<你的仓库名>/marketplace --templa
 
 发布前至少检查：
 
-- `marketplace/index.json` 的 `templates/path` 是否指向正确目录
+- `marketplace/index.json` 的 `templates/path` 是否指向正确目录（相对仓库根，不是 `index.json` 所在目录）
 - 每个模板目录内是否至少包含 `README.md` 和需要暴露的规范文件
 - 模板内容里是否带入了某个私有仓库独有的路径、域名、客户信息或任务状态
+- `path` 指向的目录里除了真正想作为 spec layer 的子目录（本仓库是 `xhh_module/`、`guides/`）外，是否还混入了 `examples/`、`.clang-format` 这类**辅助资源**——若有，必须在模板 README 的"部署后必须步骤"里明确写清移动/复制动作，否则 Trellis 会把它们误识别成一层 spec layer（见下方"部署后必须步骤"）。

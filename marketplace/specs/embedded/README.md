@@ -31,15 +31,15 @@
 
 ```text
 embedded/
-├── .clang-format                 # 格式配置(部署到项目根目录)
+├── .clang-format                 # ⚠ 辅助资源：部署到项目根目录（不是 spec layer）
 ├── README.md                     # 本文件
-├── examples/                     # 代码骨架（部署到 .trellis/examples/，不进 .trellis/spec/）
+├── examples/                     # ⚠ 辅助资源：部署后必须移出 spec 层
 │   ├── README.md
 │   ├── xhh_Task_Template.c/.h
 │   ├── xhh_Event_Template.c/.h
 │   ├── xhh_Mode_Template.c
 │   └── xhh_Task_Flash_Template.c
-├── xhh_module/                   # xhh_Module 业务层规范(11 个 .md)
+├── xhh_module/                   # ✅ spec layer：xhh_Module 业务层规范(11 个 .md)
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
 │   ├── task-module.md    # Task 模块四件套
@@ -51,7 +51,7 @@ embedded/
 │   ├── error-handling.md         # 异常与边界处理
 │   ├── logging.md     # 日志规范
 │   └── quality.md     # 质量规范（格式/验证/提交/Review）
-└── guides/                       # 思考指南
+└── guides/                       # ✅ spec layer：思考指南
     ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
     ├── protocol-event-state-task-flow.md  # 核心链路推导
     ├── isr-vs-main-loop.md                # 中断 vs 主循环
@@ -59,6 +59,8 @@ embedded/
     ├── code-reuse-thinking-guide.md       # 代码复用
     └── cross-layer-thinking-guide.md      # 跨层链路
 ```
+
+> **为什么 `examples/` 和 `.clang-format` 在模板里**：它们必须跟着 `trellis init --registry` 一起被复制下来，所以只能放在 `path` 指向的 `embedded/` 目录内。但 Trellis 会把 `embedded/` 的每个直接子目录都当作一层 spec layer 扫描，所以 init 之后这俩必须按下方"部署后必须步骤"手动搬走，否则你 `Spec layers` 列表会从预期的 `xhh_module`、`guides` 变成多出 `examples` 一层（`.clang-format` 是文件不是目录，不影响 layer 计数，但会留在 `spec/` 里没用）。
 
 ## 不直接包含的内容
 
@@ -72,11 +74,24 @@ embedded/
 trellis init --registry <仓库地址> --template embedded
 ```
 
-初始化后：
-1. 把 `.clang-format` 从 `.trellis/spec/` 复制到**项目根目录**
-2. 把 `examples/` 从 `.trellis/spec/` 移到 `.trellis/examples/`(在 `.trellis/` 但不在 `spec/` 下;Trellis 扫 spec 层只在 `spec/` 内,放外面不污染识别,实测 `Spec layers: xhh_module` 只剩 xhh_module 一层)
-3. 把 xhh_module/guides 里"项目事实占位"换成真实值
-4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
+初始化后（**必须执行前 2 步**，否则 spec layer 列表错乱）：
+
+1. **复制 `.clang-format` 到项目根目录**
+   ```powershell
+   Copy-Item .trellis\spec\embedded\.clang-format .\.clang-format
+   Remove-Item .trellis\spec\embedded\.clang-format
+   ```
+   不做这一步：`.clang-format` 留在 `.trellis/spec/embedded/` 内没人引用，clang-format 在项目根跑不到它。
+
+2. **把 `examples/` 移出 spec 层**（关键）
+   ```powershell
+   Move-Item .trellis\spec\embedded\examples .trellis\examples
+   ```
+   不做这一步：`embedded/examples/` 会被 Trellis 当成第三层 spec layer 扫描，`Spec layers` 列表会多出 `examples`，污染识别；实测移走后 `Spec layers: xhh_module, guides`（各层都还含 README/index 与若干 .md，识别正常）。
+
+3. 把 `xhh_module/` 与 `guides/` 里"项目事实占位"换成真实值（地址、结构体名、事件清单等）。
+
+4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换。
 
 ## 维护约定
 

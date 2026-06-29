@@ -42,7 +42,7 @@
 
 ### 示例代码骨架（直接套用）
 
-新建模块时复制 `.trellis/examples/` 下对应骨架,改名填逻辑即可。spec 不放代码文件,骨架代码在 `.trellis/examples/`(init 后从 `.trellis/spec/examples/` 移到 `..`,详见 README 部署步骤)。
+新建模块时复制 `.trellis/examples/` 下对应骨架,改名填逻辑即可。spec 不放代码文件,骨架代码统一在 `.trellis/examples/`（**注意不是** `.trellis/spec/embedded/examples/`——init 落地后必须按 `embedded/README.md` 的"部署后必须步骤"第 2 步把 `examples/` 移到 `.trellis/examples/`，否则 Trellis 会把它误算成一层 spec layer）。
 
 | 骨架 | 用途 |
 |------|------|
