@@ -38,12 +38,12 @@ xhh_Module/                     # 自研核心业务(本 spec 约束的全部范
 ### 状态机层(xhh_Module/xhh_Mode/)
 - 系统电源、运行、充电、休眠、唤醒等状态
 - step/loop 级状态推进
-- 详见 [state-machine-pattern.md](./state-machine-pattern.md)
+- 详见 [state-machine.md](./state-machine.md)
 
 ### Task 模块层(xhh_Module/xhh_Task/)
 - 每个硬件/业务域一个 `xhh_Task_*` 模块
 - 模块内部维护 static 状态,提供四件套 API
-- 详见 [task-module-pattern.md](./task-module-pattern.md)
+- 详见 [task-module.md](./task-module.md)
 
 ### BSP 隔离(平台无关的关键)
 - 每模块自封 BSP(static 函数),无统一 BSP 层

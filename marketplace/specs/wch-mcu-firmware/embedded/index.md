@@ -20,25 +20,25 @@
 | 文档 | 说明 |
 |------|------|
 | [命名约定](./naming-conventions.md) | xhh_ 前缀、缩写词全大写、_t 后缀、头文件保护宏 |
-| [Task 模块模式](./task-module-pattern.md) | 四件套接口、使能位守卫、ALL 聚合 |
-| [状态机模式](./state-machine-pattern.md) | 枚举+子步+计数+switch、集中转换 |
+| [Task 模块模式](./task-module.md) | 四件套接口、使能位守卫、ALL 聚合 |
+| [状态机模式](./state-machine.md) | 枚举+子步+计数+switch、集中转换 |
 | [事件系统](./event-system.md) | 全局变量单槽、参数编码、Trigger/Handle |
-| [中断与关键码](./interrupt-and-critical-code.md) | RAM 执行原则、中断禁区、TMOS 调度 |
+| [中断与关键码](./interrupt.md) | RAM 执行原则、中断禁区、TMOS 调度 |
 
 ### 边界规范（各层怎么处理）
 
 | 文档 | 说明 |
 |------|------|
 | [目录结构](./directory-structure.md) | 分层与目录布局、厂商层约定 |
-| [Flash 持久化](./flash-guidelines.md) | 结构体直存、校验、默认值、集中模块 |
+| [Flash 持久化](./flash.md) | 结构体直存、校验、默认值、集中模块 |
 | [异常与边界处理](./error-handling.md) | guard early、返回码、状态切换、无 assert |
-| [日志规范](./logging-guidelines.md) | XHH_DEBUG 宏、编译期开关 |
+| [日志规范](./logging.md) | XHH_DEBUG 宏、编译期开关 |
 
 ### 工程规范
 
 | 文档 | 说明 |
 |------|------|
-| [质量规范](./quality-guidelines.md) | 格式（Tab/.clang-format/无文件头）、验证、提交、Review 清单 |
+| [质量规范](./quality.md) | 格式（Tab/.clang-format/无文件头）、验证、提交、Review 清单 |
 
 ### 示例代码骨架（直接套用）
 
@@ -59,12 +59,12 @@
 
 - [ ] **定位改动落哪一层**：读 [../guides/protocol-event-state-task-flow.md](../guides/protocol-event-state-task-flow.md) 的决策树，确认这段逻辑该放协议/事件/状态机/Task/中断哪一层
 - [ ] **命名**：新标识符加 `xhh_` 前缀、缩写词全大写（LED/ADC/BLE）、类型 `_t` 后缀——见 [naming-conventions.md](./naming-conventions.md)
-- [ ] **若是新 Task 模块**：规划四件套（`_Init/_DeInit/_Cmd/_Loop`）+ `static volatile` 使能位 + Loop 守卫 + 注册 `xhh_Task_ALL.h`——见 [task-module-pattern.md](./task-module-pattern.md)
-- [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine-pattern.md](./state-machine-pattern.md)
+- [ ] **若是新 Task 模块**：规划四件套（`_Init/_DeInit/_Cmd/_Loop`）+ `static volatile` 使能位 + Loop 守卫 + 注册 `xhh_Task_ALL.h`——见 [task-module.md](./task-module.md)
+- [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine.md](./state-machine.md)
 - [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
-- [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt-and-critical-code.md](./interrupt-and-critical-code.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
-- [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash-guidelines.md](./flash-guidelines.md)
-- [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality-guidelines.md](./quality-guidelines.md) 文件编码章节
+- [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
+- [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
+- [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
 - [ ] **新建文件**：直接用 `write` 工具（默认 UTF-8），无文件头注释，Tab 缩进，`__XHH_<MODULE>_H__` 头文件保护
 - [ ] **要套骨架**：从项目根 `examples/` 复制对应骨架，全局替换 `Template` → 模块名
 
@@ -76,7 +76,7 @@
 
 - [ ] **编译通过**：MounRiver Studio / RISC-V GCC 编译无错
 - [ ] **产物生成**：`.hex` / `.bin` 产出 + post-build CRC 通过
-- [ ] **格式**：Tab 缩进、缩写词全大写、无文件头注释、`.clang-format` 无报错——见 [quality-guidelines.md](./quality-guidelines.md) Review Checklist
+- [ ] **格式**：Tab 缩进、缩写词全大写、无文件头注释、`.clang-format` 无报错——见 [quality.md](./quality.md) Review Checklist
 - [ ] **分层链路**：改动是否走了 协议→事件→状态机→Task 链路，有没有绕过事件层直接跨模块调
 - [ ] **状态一致性**：事件 case 内多模块联动是否一次性设置完，没有状态改一半
 - [ ] **守卫**：Task `_Loop` 首句 `if (en == 0) return;` 在；参数 `if (NULL) return` 在

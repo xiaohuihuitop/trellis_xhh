@@ -100,7 +100,7 @@ void xhh_Task_ALL_DeInit(void);
 
 ## 调度
 
-- 主循环按周期调各模块 `_Loop`(周期机制 TMOS/tick flag 由平台定,见 [interrupt-and-critical-code.md](./interrupt-and-critical-code.md))
+- 主循环按周期调各模块 `_Loop`(周期机制 TMOS/tick flag 由平台定,见 [interrupt.md](./interrupt.md))
 - 状态机层按需用 `_Cmd(1)/_Cmd(0)` 开关模块
 
 ```c

@@ -42,15 +42,15 @@ wch-mcu-firmware/
 ├── embedded/                     # 固件规范
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
-│   ├── task-module-pattern.md    # Task 模块四件套
-│   ├── state-machine-pattern.md  # 状态机范式
+│   ├── task-module.md    # Task 模块四件套
+│   ├── state-machine.md  # 状态机范式
 │   ├── event-system.md           # 事件系统
-│   ├── interrupt-and-critical-code.md  # 中断与关键码
+│   ├── interrupt.md  # 中断与关键码
 │   ├── directory-structure.md    # 目录结构
-│   ├── flash-guidelines.md       # Flash 持久化
+│   ├── flash.md       # Flash 持久化
 │   ├── error-handling.md         # 异常与边界处理
-│   ├── logging-guidelines.md     # 日志规范
-│   └── quality-guidelines.md     # 质量规范（格式/验证/提交/Review）
+│   ├── logging.md     # 日志规范
+│   └── quality.md     # 质量规范（格式/验证/提交/Review）
 └── guides/                       # 思考指南
     ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
     ├── protocol-event-state-task-flow.md  # 核心链路推导

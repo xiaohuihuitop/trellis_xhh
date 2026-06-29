@@ -22,7 +22,7 @@
 1. 复制对应骨架到项目目录,重命名(如 `xhh_Task_Template.c` → `xhh_Task_Temp.c`)
 2. 全局替换 `Template` / `TEMPLATE` 为你的模块名
 3. 填业务逻辑(GPIO 引脚、枚举值、Loop 处理、状态转换)
-4. 新 Task 模块记得注册到 `xhh_Task_ALL.h` + `xhh_Task.c`(见 task-module-pattern.md)
+4. 新 Task 模块记得注册到 `xhh_Task_ALL.h` + `xhh_Task.c`(见 task-module.md)
 
 ---
 

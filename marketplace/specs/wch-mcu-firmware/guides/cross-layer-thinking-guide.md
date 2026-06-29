@@ -49,7 +49,7 @@
 
 **症状**：关机状态 Entry 里改了运行时对象，但漏调 `Update_Flash_Data` + `Save`。
 
-**预防**：关机状态必须按"收集 → 保存"顺序，见 [flash-guidelines.md](../embedded/flash-guidelines.md)。
+**预防**：关机状态必须按"收集 → 保存"顺序，见 [flash.md](../embedded/flash.md)。
 
 ### Bug 5：中断和主循环竞态
 
