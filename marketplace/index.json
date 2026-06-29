@@ -2,12 +2,12 @@
   "version": 1,
   "templates": [
     {
-      "id": "wch-mcu-firmware",
+      "id": "embedded",
       "type": "spec",
-      "name": "WCH MCU 固件规范模板",
-      "description": "面向 MCU 固件项目的 Spec 模板。基于真实代码考古提取，编码了协议入口 → 事件 → 状态机 → Task 模块的分层方式、Task 四件套接口、枚举+子步状态机范式、全局变量单槽事件系统、Flash 结构体直存持久化、RAM 执行中断原则，以及统一 Tab/无文件头/.clang-format 格式规约。",
-      "path": "marketplace/specs/wch-mcu-firmware",
-      "tags": ["mcu", "firmware", "wch", "embedded", "flash", "state-machine", "event-driven"]
+      "name": "嵌入式 MCU 固件规范模板",
+      "description": "面向 MCU 固件项目的 Spec 模板,WCH/PY32 多平台通用。基于真实代码考古提取,编码了协议入口 → 事件 → 状态机 → Task 模块的分层方式、Task 四件套接口、枚举+子步状态机范式、全局变量单槽事件系统、Flash 结构体直存持久化、中断跨平台原则,以及统一 Tab/无文件头/.clang-format 格式规约。",
+      "path": "marketplace/specs/embedded",
+      "tags": ["mcu", "firmware", "embedded", "flash", "state-machine", "event-driven", "xhh"]
     }
   ]
 }

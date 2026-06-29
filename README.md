@@ -10,11 +10,11 @@
 
 当前提供的模板：
 
-- `wch-mcu-firmware`：适用于 WCH MCU 固件项目（基于真实代码考古提取的完整约定）
+- `embedded`:适用于嵌入式 MCU 固件项目(基于真实代码考古提取的完整约定,XCH/PY32 等多平台通用)
 
-> 原 `wch-mcu-ble-app` 模板已移除（删除 frontend 后与 firmware 模板重复，未来如需 BLE 调试 App 规范再单独建）。
+> 原 `wch-mcu-ble-app` 模板已移除(删除 frontend 后与 firmware 模板重复,未来如需 BLE 调试 App 规范再单独建)。
 
-## 模板编码的约定（wch-mcu-firmware）
+## 模板编码的约定(embedded)
 
 本模板不是空模板，而是从真实项目代码里提取的开发者工程习惯：
 
@@ -35,11 +35,11 @@ trellis_spec/
 ├── marketplace/
 │   ├── index.json                              # 模板索引入口
 │   └── specs/
-│       └── wch-mcu-firmware/                   # 固件规范模板
-│           ├── .clang-format                   # 格式配置（部署到项目根）
+│       └── embedded/                           # 嵌入式固件规范模板
+│           ├── .clang-format                   # 格式配置(部署到项目根)
 │           ├── README.md
-│           ├── backend/                        # 固件规范（10 个文件）
-│           └── guides/                         # 思考指南（5 个文件）
+│           ├── xhh_module/                      # xhh_Module 业务层规范(11 个 .md)
+│           └── guides/                         # 思考指南(6 个 .md)
 ├── .gitignore
 └── README.md
 ```
@@ -59,12 +59,13 @@ trellis_spec/
 trellis init --registry gh:<你的账号>/<你的仓库名>/marketplace
 
 # 直接指定模板
-trellis init --registry gh:<你的账号>/<你的仓库名>/marketplace --template wch-mcu-firmware
+trellis init --registry gh:<你的账号>/<你的仓库名>/marketplace --template embedded
 ```
 
-初始化后：
+初始化后:
 1. 把模板根的 `.clang-format` 复制到项目根目录
-2. 把 backend/guides 里"项目事实占位"换成真实值
+2. 把 `examples/` 从 `.trellis/spec/` 移到 `.trellis/examples/`(在 `.trellis` 但不在 `spec` 下,不被 Trellis 当 spec 层扫)
+3. 把 xhh_module/guides 里"项目事实占位"换成真实值
 3. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
 
 ## 维护约定

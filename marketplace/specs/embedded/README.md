@@ -1,9 +1,9 @@
-# WCH MCU 固件规范模板
+# 嵌入式 MCU 固件规范模板
 
-适用场景：
+适用场景:
 
-- WCH 系列 MCU 固件项目
-- 以 C 语言、状态机、模块化 Task 为主的嵌入式工程
+- 嵌入式 MCU 固件项目(WCH/PY32 等多平台通用)
+- 以 C 语言、状态机、模块化 Task 为主的工程
 - 需要 Flash 持久化、串口调试日志、构建产物管理的工程
 
 ## 模板编码的约定
@@ -13,7 +13,7 @@
 ### 分层架构
 协议入口 → 事件分发 → 状态机 → Task 模块 → BSP 支撑。厂商层（SRC/HAL/LIB/Profile）不改源码，只调 config.h。
 
-### 核心模式（见 embedded/ 各 pattern 文件）
+### 核心模式(见 xhh_module/ 各 pattern 文件)
 - **命名约定**：`xhh_` 前缀 + snake_case + 缩写词全大写 + `_t` 后缀 + 头文件保护 `__XHH_<MODULE>_H__`
 - **Task 模块四件套**：`_Init/_DeInit/_Cmd(uint8_t)/_Loop` + static volatile 使能位 + Loop 首句守卫 + `xhh_Task_ALL.h` 聚合
 - **状态机**：枚举状态 + 子步(Entry/Ing/Done) + Loop_Count + 单 switch + 集中 `xhh_SYS_Change`
@@ -30,8 +30,8 @@
 ## 目录结构
 
 ```text
-wch-mcu-firmware/
-├── .clang-format                 # 格式配置（部署到项目根目录）
+embedded/
+├── .clang-format                 # 格式配置(部署到项目根目录)
 ├── README.md                     # 本文件
 ├── examples/                     # 代码骨架（部署到 .trellis/examples/，不进 .trellis/spec/）
 │   ├── README.md
@@ -39,7 +39,7 @@ wch-mcu-firmware/
 │   ├── xhh_Event_Template.c/.h
 │   ├── xhh_Mode_Template.c
 │   └── xhh_Task_Flash_Template.c
-├── embedded/                     # 固件规范
+├── xhh_module/                   # xhh_Module 业务层规范(11 个 .md)
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
 │   ├── task-module.md    # Task 模块四件套
@@ -69,13 +69,13 @@ wch-mcu-firmware/
 ## 使用方式
 
 ```bash
-trellis init --registry <仓库地址> --template wch-mcu-firmware
+trellis init --registry <仓库地址> --template embedded
 ```
 
 初始化后：
 1. 把 `.clang-format` 从 `.trellis/spec/` 复制到**项目根目录**
-2. 把 `examples/` 从 `.trellis/spec/` 移到 `.trellis/examples/`（在 `.trellis/` 但不在 `spec/` 下；Trellis 扫 spec 层只在 `spec/` 内,放外面不污染识别,实测 `Spec layers: embedded` 只剩 embedded 一层）
-3. 把 embedded/guides 里"项目事实占位"换成真实值
+2. 把 `examples/` 从 `.trellis/spec/` 移到 `.trellis/examples/`(在 `.trellis/` 但不在 `spec/` 下;Trellis 扫 spec 层只在 `spec/` 内,放外面不污染识别,实测 `Spec layers: xhh_module` 只剩 xhh_module 一层)
+3. 把 xhh_module/guides 里"项目事实占位"换成真实值
 4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
 
 ## 维护约定
@@ -83,4 +83,4 @@ trellis init --registry <仓库地址> --template wch-mcu-firmware
 - 模板里放的是"可复用的工程约定"，不是某一个仓库的全部细节
 - 具体项目初始化后，继续在自己的 `.trellis/spec/` 里本地演化
 - 文档用中文
-- 新增模式/指南时，先补文件，再同步更新 `embedded/index.md` 或 `guides/index.md`
+- 新增模式/指南时,先补文件,再同步更新 `xhh_module/index.md` 或 `guides/index.md`

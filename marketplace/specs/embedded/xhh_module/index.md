@@ -1,6 +1,6 @@
-# 嵌入式（固件）开发规范
+# xhh_Module 开发规范
 
-> 这里的 "embedded" 指 MCU 固件本体，不是 web 服务。
+> 这里的 "xhh_module" 约束 `xhh_Module/` 业务层(Event/Mode/Task),不是平台层,也不是 web 服务。
 
 ---
 
