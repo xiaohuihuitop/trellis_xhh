@@ -33,7 +33,7 @@
 wch-mcu-firmware/
 ├── .clang-format                 # 格式配置（部署到项目根目录）
 ├── README.md                     # 本文件
-├── examples/                     # 代码骨架（部署到项目根目录，不进 .trellis/spec/）
+├── examples/                     # 代码骨架（部署到 .trellis/examples/，不进 .trellis/spec/）
 │   ├── README.md
 │   ├── xhh_Task_Template.c/.h
 │   ├── xhh_Event_Template.c/.h
@@ -74,7 +74,7 @@ trellis init --registry <仓库地址> --template wch-mcu-firmware
 
 初始化后：
 1. 把 `.clang-format` 从 `.trellis/spec/` 复制到**项目根目录**
-2. 把 `examples/` 从 `.trellis/spec/` 移到**项目根目录**（Trellis 扫 spec 层时不把 examples 当规范层）
+2. 把 `examples/` 从 `.trellis/spec/` 移到 `.trellis/examples/`（在 `.trellis/` 但不在 `spec/` 下；Trellis 扫 spec 层只在 `spec/` 内,放外面不污染识别,实测 `Spec layers: embedded` 只剩 embedded 一层）
 3. 把 embedded/guides 里"项目事实占位"换成真实值
 4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
 

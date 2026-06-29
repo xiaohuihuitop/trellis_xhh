@@ -42,7 +42,7 @@
 
 ### 示例代码骨架（直接套用）
 
-新建模块时复制**项目根 `examples/`** 下对应骨架,改名填逻辑即可。spec 不放代码文件,骨架代码作为独立目录随项目维护。`trellis init` 后需手动把模板根的 `examples/` 复制到项目根。
+新建模块时复制 `.trellis/examples/` 下对应骨架,改名填逻辑即可。spec 不放代码文件,骨架代码在 `.trellis/examples/`(init 后从 `.trellis/spec/examples/` 移到 `..`,详见 README 部署步骤)。
 
 | 骨架 | 用途 |
 |------|------|
@@ -66,7 +66,7 @@
 - [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
 - [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
 - [ ] **新建文件**：直接用 `write` 工具（默认 UTF-8），无文件头注释，Tab 缩进，`__XHH_<MODULE>_H__` 头文件保护
-- [ ] **要套骨架**：从项目根 `examples/` 复制对应骨架，全局替换 `Template` → 模块名
+- [ ] **要套骨架**：从 `.trellis/examples/` 复制对应骨架，全局替换 `Template` → 模块名
 
 ---
 
