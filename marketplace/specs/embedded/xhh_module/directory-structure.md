@@ -16,14 +16,23 @@ xhh_Module/                     # 自研核心业务(本 spec 约束的全部范
 ├── xhh_Mode/                   # 系统状态机、模式状态
 │   ├── xhh_Mode.h
 │   └── xhh_Mode.c
-└── xhh_Task/                   # 功能 Task 模块
-    ├── xhh_Task_ADC.c/.h
-    ├── xhh_Task_BAT.c/.h
-    ├── xhh_Task_Motor.c/.h
-    ├── xhh_Task_Flash.c/.h
-    ├── ...                     # 按项目需求增减
-    ├── xhh_Task.c             # 聚合实现(转发各模块四件套)
-    └── xhh_Task_ALL.h         # 聚合头
+├── xhh_Task/                   # 功能 Task 模块
+│   ├── xhh_Task_ADC.c/.h
+│   ├── xhh_Task_BAT.c/.h
+│   ├── xhh_Task_Motor.c/.h
+│   ├── xhh_Task_Flash.c/.h     # 小项目简化方案才用(见 flash.md)
+│   ├── ...                     # 按项目需求增减
+│   ├── xhh_Task.c             # 聚合实现(转发各模块四件套)
+│   └── xhh_Task_ALL.h         # 聚合头
+└── xhh_BSP/                    # 集中 BSP 公共层(逻辑 ID 抽象)
+    ├── xhh_BSP_Def.c/.h        # 跨类别共用类型/工具
+    ├── xhh_BSP_GPIO.c/.h
+    ├── xhh_BSP_PWM.c/.h
+    ├── xhh_BSP_ADC.c/.h
+    ├── xhh_BSP_Flash.c/.h
+    ├── xhh_BSP_RTC.c/.h
+    ├── xhh_BSP_Power.c/.h
+    └── xhh_BSP_System.c/.h     # 临界区等系统级能力
 ```
 
 ---
@@ -45,10 +54,11 @@ xhh_Module/                     # 自研核心业务(本 spec 约束的全部范
 - 模块内部维护 static 状态,提供四件套 API
 - 详见 [task-module.md](./task-module.md)
 
-### BSP 隔离(平台无关的关键)
-- 每模块自封 BSP(static 函数),无统一 BSP 层
-- 换 MCU 只改 BSP static 函数实现,模块对外接口不变
-- 厂商硬件操作在平台层(具体目录由 MCU 定)
+### BSP 公共层(xhh_Module/xhh_BSP/)
+- 集中硬件抽象层,通过逻辑 ID 解耦业务语义和物理引脚
+- `xhh_Event/Mode/Task` 不直接碰厂商 API/寄存器/引脚号/地址
+- 换 MCU 只改 `xhh_BSP_*.c` 实现,业务层零改动
+- 详见 [bsp.md](./bsp.md)
 
 ---
 
@@ -81,7 +91,7 @@ xhh_Module/         # 业务层(本 spec 约束)
 ui/                 # RLE 图片资源(按需)
 ```
 
-平台层规则由项目按 MCU 自填。本 spec 要求:**`xhh_Module/` 不依赖平台目录名**,通过 BSP static 函数隔离硬件。
+平台层规则由项目按 MCU 自填。本 spec 要求:**`xhh_Module/` 不依赖平台目录名**,硬件隔离集中在 `xhh_BSP/`(见 [bsp.md](./bsp.md))。
 
 ---
 

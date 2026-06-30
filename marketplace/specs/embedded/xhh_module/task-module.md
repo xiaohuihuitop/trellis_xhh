@@ -62,21 +62,20 @@ void xhh_Task_HoldPP_Loop(void) {
 
 ---
 
-## BSP 封装(static,平台隔离关键)
+## 硬件访问(通过 BSP 公共层)
 
-- 模块内硬件操作(GPIO/定时器/PWM/HAL 调用)封装成 `static` 函数,命名 `<模块>_BSP_Set_<对象>`
-- BSP 函数不进头文件,在 `.c` 顶部前向声明
-- 这层是 `xhh_Module` 平台无关的关键:换 MCU 只改 BSP static 函数实现,模块对外接口不变
+Task 不直接碰厂商 API/寄存器/引脚号,统一调 `xhh_BSP_*` 公开接口,见 [bsp.md](./bsp.md)。
 
 ```c
-// 顶部前向声明
-static void Motor_BSP_Set_EN(uint8_t set);
-static void Motor_BSP_Set_Level(uint8_t level);
-
-// 实现:封 GPIO/PWM/HAL 细节(WCH 用 GPIOB_ModeCfg,PY32 用 HAL_GPIO_PinConfig,都封在这)
+// Task 内只调 BSP 公开接口,不出现 GPIOB_ModeCfg/HAL_GPIO_PinConfig 等
+xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_MOTOR_EN, 1);
+xhh_BSP_PWM_Set(xhh_BSP_PWM_ID_MOTOR_LEVEL, LevelToDuty(level));
+xhh_BSP_Flash_Read(xhh_BSP_FLASH_ID_MOTOR_CONFIG, 0, &cfg, sizeof(cfg));
 ```
 
-不要为追求"统一 BSP 抽象"把硬件细节抽到公共层——每模块自封 BSP 反而让换平台只动一处。
+业务参数→硬件值的换算(如 level 0~100 → duty)放 Task 内 `static` 函数,不进 BSP。
+
+`#include` 只 include `xhh_BSP_*.h` 公共头,不 include 厂商 SDK 头(`CH59x_gpio.h`/`py32f0xx_hal.h` 等)。
 
 ---
 
@@ -125,4 +124,5 @@ xhh_Task_ADC_Cmd(1);
 - 在 `_Loop` 里漏掉使能位守卫
 - 四件套缺接口(即使实现为空,接口也必须暴露)
 - 新建功能时不建 Task 模块,直接在 main 里堆逻辑
-- 把 BSP 细节写进头文件
+- Task 内直接调厂商 API 或 include 厂商 SDK 头(必须经 `xhh_BSP_*`)
+- 新增设备型 BSP(`xhh_BSP_Key`/`xhh_BSP_Motor` 这类)或 `xhh_Port_*` 转发层

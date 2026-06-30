@@ -26,6 +26,18 @@
 | BSP 硬件操作 | `<模块>_BSP_Set_<对象>`(static,不进头文件) | `Motor_BSP_Set_EN`、`Motor_BSP_Set_Level` |
 | 状态切换 | `xhh_SYS_Change` / `xhh_Mode_Change` | `xhh_SYS_Change(xhh_SYS_Run)` |
 | 事件触发/处理 | `xhh_Event_Trigger` / `xhh_Event_Handle` | — |
+| BSP 公开接口 | `xhh_BSP_<类别>_<动词>`(缩写词全大写 GPIO/PWM/ADC/RTC/IT) | `xhh_BSP_GPIO_Read`、`xhh_BSP_Flash_Write`、`xhh_BSP_System_IT_Disable` |
+
+### BSP 专用命名(详见 bsp.md)
+
+| 元素 | 规则 | 示例 |
+|------|------|------|
+| 逻辑 ID 枚举类型 | `xhh_BSP_<类别>_ID_t` | `xhh_BSP_GPIO_ID_t` |
+| 逻辑 ID 枚举值 | `xhh_BSP_<类别>_ID_<对象>` | `xhh_BSP_GPIO_ID_KEY_MATCH` |
+| BSP 公开宏 | `XHH_BSP_*` 全大写 | `XHH_BSP_FLASH_LIGHT_CONFIG_SIZE` |
+| BSP 内部 static | `app_<类别>_<动词>` | `app_pwm_scale`、`app_flash_get_region` |
+| 物理参数宏(在 .c 内) | `APP_<类别>_<对象>_*` 全大写 | `APP_GPIO_KEY_MATCH_PIN`、`APP_FLASH_LIGHT_CONFIG_ADDR` |
+| BSP 头文件保护 | `__XHH_BSP_<类别>_H__` | `__XHH_BSP_GPIO_H__` |
 
 动词后置约定(常用后缀):
 

@@ -1,29 +1,26 @@
 #include "xhh_Task_Template.h"
 #include "xhh_Task_ALL.h"
+#include "xhh_BSP_GPIO.h"   // 硬件走 BSP 公共层(见 bsp.md),不直接调厂商 API
 
 // ===== 模块内状态(static 封装) =====
 static volatile uint8_t xhh_task_template_en = 0;   // 使能位(必须 static volatile)
 static Template_Obj_t Template = {0};               // 模块对象
 
-// ===== BSP static 前向声明(不进头文件) =====
-static void Template_BSP_Set_EN(uint8_t set);
-static void Template_BSP_Set_Value(uint8_t value);
+// ===== 业务参数→硬件值换算放 Task 内 static(见 bsp.md) =====
+static uint16_t Template_ValueToDuty(uint8_t value);
 
 // ===== 四件套 =====
 
 void xhh_Task_Template_Init(void)
 {
-	// GPIO / 外设配置(按实际引脚改)
-	GPIOB_ResetBits(GPIO_Pin_7);
-	GPIOB_ModeCfg(GPIO_Pin_7, GPIO_ModeOut_PP_5mA);
+	// GPIO 初始化已由 BSP_Init() 统一调 xhh_BSP_GPIO_Init() 完成,这里只做模块自身初始化
+	// 如需 PWM 等其他 BSP,按需调 xhh_BSP_PWM_Init(xhh_BSP_PWM_ID_TEMPLATE_OUT);
 }
 
 void xhh_Task_Template_DeInit(void)
 {
-	// 反初始化:关输出 + 复位 GPIO
-	Template_BSP_Set_EN(0);
-	GPIOB_ResetBits(GPIO_Pin_7);
-	GPIOB_ModeCfg(GPIO_Pin_7, GPIO_ModeOut_PP_5mA);
+	// 反初始化:关硬件输出
+	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_TEMPLATE_EN, 0);
 }
 
 void xhh_Task_Template_Cmd(uint8_t cmd)
@@ -35,7 +32,7 @@ void xhh_Task_Template_Cmd(uint8_t cmd)
 	else
 	{
 		xhh_task_template_en = 0;
-		Template_BSP_Set_EN(0);    // 关时复位硬件
+		xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_TEMPLATE_EN, 0);   // 关时复位硬件
 	}
 }
 
@@ -46,7 +43,8 @@ void xhh_Task_Template_Loop(void)
 		return;
 
 	// TODO: 填模块周期逻辑
-	Template_BSP_Set_Value(Template.value);
+	// 硬件输出经 BSP,业务参数已在内部换算成 duty/level
+	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_TEMPLATE_OUT, Template.value > 0 ? 1 : 0);
 }
 
 // ===== Set/Get =====
@@ -63,18 +61,11 @@ Template_Obj_t xhh_Task_Template_Get_Obj(void)
 	return Template;
 }
 
-// ===== BSP static 实现(硬件细节,不进头文件) =====
+// ===== 业务参数→硬件值换算(放 Task 内,不进 BSP) =====
 
-static void Template_BSP_Set_EN(uint8_t set)
+static uint16_t Template_ValueToDuty(uint8_t value)
 {
-	if (set)
-		GPIOB_SetBits(GPIO_Pin_7);
-	else
-		GPIOB_ResetBits(GPIO_Pin_7);
-}
-
-static void Template_BSP_Set_Value(uint8_t value)
-{
-	// TODO: 填硬件输出(PWM/DAC/寄存器等)
+	// TODO: 按 PWM duty 范围换算 value(0~100)→duty
 	(void)value;
+	return 0;
 }

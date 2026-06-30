@@ -9,7 +9,7 @@
 | 文件 | 用途 | 复制后改成 |
 |------|------|-----------|
 | `xhh_Task_Template.h` | Task 模块头文件(四件套 + 类型 + 宏) | `Template` → 你的模块名(如 `Temp`) |
-| `xhh_Task_Template.c` | Task 模块实现(四件套 + BSP static + Loop 守卫) | 同上 + 填 GPIO/硬件配置 + Loop 逻辑 |
+| `xhh_Task_Template.c` | Task 模块实现(四件套 + 调 `xhh_BSP_*` + Loop 守卫) | 同上 + 填业务逻辑/换算 + 注册逻辑 ID |
 | `xhh_Event_Template.h` | 事件枚举 + 参数 ID 宏 | 加你的事件值 |
 | `xhh_Event_Template.c` | Trigger + Handle switch 骨架 | 加你的事件 case |
 | `xhh_Mode_Template.c` | 状态机枚举 + Change + Handle 骨架 | 加你的状态 + 子步逻辑 |
@@ -33,6 +33,6 @@
 - 头文件保护 `__XHH_<MODULE>_H__`(双下划线包裹)
 - 使能位 `static volatile uint8_t xhh_task_<x>_en`(必须 static)
 - Loop 首句 `if (en == 0) return;` 守卫
-- BSP 函数 static,不进头文件,.c 顶部前向声明
+- 硬件操作走 `xhh_BSP_*` 公共层,Task 不直接调厂商 API(见 bsp.md)
 - Tab 缩进,Allman 大括号,无文件头注释
 - 编码 UTF-8,行尾 CRLF

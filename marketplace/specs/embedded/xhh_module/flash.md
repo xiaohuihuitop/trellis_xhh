@@ -1,119 +1,163 @@
 # Flash 持久化规范
 
-> 固件没有数据库。持久化 = Flash 结构体直存 + 字段校验 + 无效清默认值。集中在 `xhh_Task_Flash`,不分散写。
+> 持久化走 `xhh_BSP_Flash` 逻辑分区 + 各业务 Task 自管 `magic/size/checksum` 头。集中模块不再唯一,按子区独立读写,互不影响。
 
 ---
 
-## 底层读写封装(平台自填实现)
+## 底层 Flash 抽象(见 bsp.md)
 
-底层 Flash 原语封装在平台层(不在 `xhh_Module`),提供统一签名:
+Flash 硬件操作封装在 `xhh_Module/xhh_BSP/xhh_BSP_Flash.c/.h`,提供逻辑分区接口:
 
 | 函数 | 职责 |
 |------|------|
-| `Flash_Erase(addr)` | 擦除一页 |
-| `Flash_Read(buff, len, addr)` | 读 |
-| `Flash_Write(buff, len, addr)` | 擦+写 |
-| `Flash_Write_Any(...)` | 跨页写(按需) |
+| `xhh_BSP_Flash_Init(void)` | 初始化 |
+| `xhh_BSP_Flash_Read(id, offset, buf, len)` | 读逻辑分区 |
+| `xhh_BSP_Flash_Erase(id)` | 擦除逻辑分区 |
+| `xhh_BSP_Flash_Write(id, offset, buf, len)` | 写逻辑分区(内部读-改-擦-写) |
 
-`xhh_Task_Flash` 只调这层签名,不直接碰厂商 API。具体实现依 MCU:
-
-- WCH 项目:基于 `EEPROM_*` 宏,页大小由 `FLASH_DATA_PAGE_SIZE` 定义
-- PY32 项目:基于 `HAL_FLASH_Program`
-- 其他:按 MCU HAL
+逻辑分区 ID 枚举:
 
 ```c
-// 实现示例(WCH,平台层)
-void Flash_Write(uint8_t *buff, uint16_t len, uint32_t addr) {
-    Flash_Erase(addr);
-    EEPROM_WRITE(addr, buff, len);
+// xhh_BSP_Flash.h
+typedef enum {
+    xhh_BSP_FLASH_ID_LIGHT_CONFIG = 0,
+    xhh_BSP_FLASH_ID_MOTOR_CONFIG,
+    // 按项目业务域注册
+} xhh_BSP_FLASH_ID_t;
+```
+
+每个 ID 对应固定地址 + 大小,映射在 `xhh_BSP_Flash.c` 内 `static bool app_flash_get_region(id, &addr, &size)`。业务层只认 ID,不碰地址。
+
+`Write` 内部做读-改-擦-写(因 Flash 页擦粒度):
+
+```c
+void xhh_BSP_Flash_Write(xhh_BSP_FLASH_ID_t id, uint16_t offset, uint8_t *buf, uint16_t len) {
+    uint32_t addr, size;
+    if (!app_flash_get_region(id, &addr, &size)) return;
+    // 边界检查(offset+len <= size)
+    EEPROM_READ(addr, page_buf, size);
+    memcpy(&page_buf[offset], buf, len);
+    EEPROM_ERASE(addr, size);
+    EEPROM_WRITE(addr, page_buf, size);
 }
 ```
 
+具体 EEPROM/HAL 实现按平台,见 [bsp.md](./bsp.md)。
+
 ---
 
-## 存储模式:结构体直存
+## 存储模式:各业务 Task 自管子区
 
-- 用一个集中结构体承载所有用户配置/运行记忆
-- 全局唯一运行副本 `g_xhh_user_data`
-- 地址用宏定义,不硬编码数字
+每个业务 Task 维护**自己的存储结构体 + 校验头**,通过 `xhh_BSP_Flash_*` 读写自己的逻辑分区:
 
 ```c
-// xhh_Module/xhh_Task/xhh_Task_Flash.h
-#define FLASH_USER_DATA_ADDR 0
+// xhh_Task_Light.h
+#define APP_LIGHT_CONFIG_MAGIC    0x5848U
+#define APP_LIGHT_CONFIG_CHECK_XOR 0xA35AC65A
+#define APP_LIGHT_STORE_DELAY_10MS 300   // 改配置后延迟 3s 合并写
 
 typedef struct {
-    uint16_t time;
-    xhh_Mode_t mode;
-    Motor_Obj_t motor;
-    xhh_Task_BAT_Val_t bat_val;
-} xhh_Task_Flash_user_data_t;
-
-xhh_Task_Flash_user_data_t g_xhh_user_data;   // 跨文件全局
+    uint16_t magic;       // 校验头
+    uint16_t size;
+    uint32_t checksum;    // 滚动移位 XOR
+    // 业务字段
+    uint8_t brightness;
+    uint8_t mode;
+    // ...
+} xhh_Task_Light_Config_t;
 ```
 
----
+### 校验头三件套(magic + size + checksum)
 
-## 读写函数命名
+- `magic`:固定标识,初值区分"空 Flash(0xFF)"和"已写入"
+- `size`:结构体自身大小,检测版本/布局变化
+- `checksum`:32位滚动移位 XOR,检测数据损坏
 
-| 函数 | 方向 |
-|------|------|
-| `xhh_Task_Flash_Get_User_Data` | Flash → 结构体 |
-| `xhh_Task_Flash_Save_User_Data` | 结构体 → Flash |
-| `xhh_Task_Flash_Update_User_Data` | 结构体 → 各 Task 运行时对象 |
-| `xhh_Task_Flash_Update_Flash_Data` | 各 Task 运行时对象 → 结构体 |
+```c
+// 滚动 XOR 算法(项目5 验证)
+static uint32_t config_checksum(const uint8_t *data, uint16_t len) {
+    uint32_t checksum = APP_LIGHT_CONFIG_CHECK_XOR;
+    for (uint16_t i = 0; i < len; i++) {
+        checksum = (checksum << 5) | (checksum >> 27);
+        checksum ^= data[i];
+    }
+    return checksum;
+}
+```
 
 ---
 
 ## 有效性校验 + 默认值
 
-- 读取后**先校验再使用**,逐字段范围检查
-- 非法数据不部分信任,整体清默认值重写
-- 利用 Flash 默认全 1 特性判断首次上电
+每个 Task 自己做校验,不全局统一:
 
 ```c
-void xhh_Task_Flash_Get_User_Data(xhh_Task_Flash_user_data_t *data) {
-    Flash_Read((uint8_t *)data, sizeof(*data), FLASH_USER_DATA_ADDR);
-    if (xhh_Task_Flash_User_Data_IS_Valid(data) == 0) {
-        xhh_Task_Flash_User_Data_Clean(data);          // 清默认值
-        xhh_Task_Flash_Save_User_Data(data);           // 写回
+void xhh_Task_Light_LoadConfig(void) {
+    xhh_BSP_Flash_Read(xhh_BSP_FLASH_ID_LIGHT_CONFIG, 0, &cfg, sizeof(cfg));
+    if (cfg.magic != APP_LIGHT_CONFIG_MAGIC || cfg.size != sizeof(cfg) || !Config_Valid(&cfg)) {
+        Config_CleanDefaults(&cfg);   // 整体清默认值
+        xhh_Task_Light_SaveConfig();  // 写回
     }
 }
 ```
 
-`IS_Valid` 逐字段范围校验(枚举校验范围,数值校验 min/max),`Clean` 写默认值。
-
-校验失败策略:**整体清默认值重写**,不部分信任。理由:Flash 擦除后是 0xFF,部分字段可能合法部分非法,部分信任会导致混合状态。
+校验失败:**该子区整体清默认值重写**,不影响其他子区。其他 Task 的配置不受影响——这是逻辑分区相对单结构体的核心优势。
 
 ---
 
-## 启动 / 关机保存时机
+## 编译期分区检查
 
-- **启动**:`Get_User_Data` → 校验 → `Update_User_Data`(推到各 Task 运行时)
-- **关机**:`Update_Flash_Data`(各 Task 收集到结构体)→ `Save_User_Data`
+每个 Flash 子区结构体必须配静态断言,确保放得下分区:
 
 ```c
-// 关机时(xhh_Mode.c 关机状态)
-xhh_Task_Flash_Update_Flash_Data(&g_xhh_user_data);
-xhh_Task_Flash_Save_User_Data(&g_xhh_user_data);
+// xhh_BSP_Flash.c
+#define APP_FLASH_STATIC_ASSERT(cond, name) typedef char name[(cond) ? 1 : -1]
+APP_FLASH_STATIC_ASSERT(
+    sizeof(xhh_Task_Light_Config_t) <= XHH_BSP_FLASH_LIGHT_CONFIG_SIZE,
+    light_config_too_large
+);
 ```
+
+结构体增大超过分区大小时,编译期报错,不会运行时溢出。
 
 ---
 
-## 持久化边界
+## 写 Flash 时机
 
-- 持久化集中在 `xhh_Task_Flash.*`,其他模块(Motor/BAT/Timeout)不直接调 `Flash_Write`
-- `xhh_Task_Flash` 模块**只做整体管理**:`Get` / `Set` / `Clean` / `IS_Valid` / `Init` / `DeInit` / `Cmd`
-- **禁止在 Flash 模块内放单字段 Save 接口**(如 `Save_Temp_Max` / `Save_BAT` / `Save_Level`)——这些由业务模块在自己的 .c 里实现
-- 单字段 Save 接口(业务模块内)**只更新 RAM**(`g_xhh_user_data.xxx = value`),**不立即写 Flash**;整体写 Flash 由关机流程集中调用
-- 需要立即持久化的场景(如设置即生效):调用方直接 `g_xhh_user_data.xxx = value; xhh_Task_Flash_User_Data_Set_Flash(&g_xhh_user_data);`
-- 读取直接用 `g_xhh_user_data.xxx`,不用函数接口
-- OTA 标志单独存固定地址,不进用户数据结构体
+| 场景 | 做法 |
+|------|------|
+| 日常改配置 | 改内存值 + 设置 10ms 倒计时延迟合并写(`APP_LIGHT_STORE_DELAY_10MS`) |
+| 倒计时到 | 在 Task `_Loop` 里倒计时归零时调 `xhh_BSP_Flash_Write` |
+| 关机集中 | 各 Task 在关机事件/状态里调自己的保存函数 |
+| 中断里 | **禁止**写 Flash |
+
+延迟合并写避免配置连续变化时频繁擦写,关机集中写保证关机前落盘。
+
+---
+
+## 简化方案:小项目单结构体
+
+字段少(<5 个)且全项目一个配置对象时,可简化为集中单结构体:
+
+```c
+typedef struct {
+    xhh_Mode_t mode;
+    Motor_Obj_t motor;
+} xhh_UserData_t;
+xhh_UserData_t g_xhh_user_data;
+```
+
+用 `xhh_BSP_Flash` 单分区存储 + magic 校验。各 Task 通过 `g_xhh_user_data.xxx` 读写,关机时 `xhh_BSP_Flash_Write` 整体写。
+
+**判断标准:** 业务域 ≤2 个(如只有电机+电池)用简化;≥3 个(灯光+电机+电池+触摸+日历)用逻辑分区。
 
 ---
 
 ## 禁止
 
-- 把这一层写成数据库抽象(CRUD 术语 / KV / migration)
-- 各 Task 模块分散写 Flash
+- `xhh_Task` 直接调 `EEPROM_*` / `HAL_FLASH_Program`(必须经 `xhh_BSP_Flash_*`)
+- 在中断里写 Flash
 - 未校验就把 Flash 内容应用到运行时
-- 在中断里读写 Flash
+- 一个子区的损坏影响其他子区(逻辑分区的核心保证)
+- 给新增结构体不加 `APP_FLASH_STATIC_ASSERT`
+- 写 Flash 不做延迟合并(连续改配置时每次立即擦写)

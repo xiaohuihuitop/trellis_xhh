@@ -1,15 +1,16 @@
 # xhh_Module 开发规范
 
-> 这里的 "xhh_module" 约束 `xhh_Module/` 业务层(Event/Mode/Task),不是平台层,也不是 web 服务。
+> 这里的 "xhh_module" 约束 `xhh_Module/` 业务层(Event/Mode/Task/BSP),不是平台层,也不是 web 服务。
 
 ---
 
 ## 概述
 
 - 工程以 C 语言为主
-- 核心控制流：协议入口 → 事件分发 → 系统状态机 → 功能 Task 模块
+- 核心控制流：协议入口 → 事件分发 → 系统状态机 → 功能 Task 模块 → BSP 公共层
 - 重视可控性、可验证性、板级调试，而不是抽象层层封装
 - 厂商层（SRC/HAL/LIB/Profile）不改源码，只在 config.h 调宏
+- 硬件操作集中在 `xhh_BSP/`,Task 不直接碰厂商 API
 
 ---
 
@@ -20,10 +21,11 @@
 | 文档 | 说明 |
 |------|------|
 | [命名约定](./naming-conventions.md) | xhh_ 前缀、缩写词全大写、_t 后缀、头文件保护宏 |
-| [Task 模块模式](./task-module.md) | 四件套接口、使能位守卫、ALL 聚合 |
+| [Task 模块模式](./task-module.md) | 四件套接口、使能位守卫、ALL 聚合、调 `xhh_BSP_*` |
 | [状态机模式](./state-machine.md) | 枚举+子步+计数+switch、集中转换 |
 | [事件系统](./event-system.md) | 全局变量单槽、参数编码、Trigger/Handle |
-| [中断与关键码](./interrupt.md) | RAM 执行原则、中断禁区、TMOS 调度 |
+| [中断与关键码](./interrupt.md) | 跨平台原则、时敏输出/安全关断例外 |
+| [BSP 公共层](./bsp.md) | 逻辑 ID 抽象、能力白名单、设备型黑名单、平台隔离 |
 
 ### 边界规范（各层怎么处理）
 
@@ -63,6 +65,7 @@
 - [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine.md](./state-machine.md)
 - [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
 - [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
+- [ ] **涉及硬件操作**：Task 不直接调厂商 API/引脚号/寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
 - [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
 - [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
 - [ ] **新建文件**：直接用 `write` 工具（默认 UTF-8），无文件头注释，Tab 缩进，`__XHH_<MODULE>_H__` 头文件保护
