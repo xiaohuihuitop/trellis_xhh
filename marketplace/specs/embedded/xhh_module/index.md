@@ -48,9 +48,11 @@
 
 | 骨架 | 用途 |
 |------|------|
+| `xhh_BSP_Template.c/.h` | BSP 公共层骨架(GPIO 示例类别,逻辑 ID 枚举 + switch 映射 + 平台隔离) |
+| `xhh_Task_All_Template.h/.c` | 聚合层骨架(聚合 include + 转发各模块四件套) |
 | `xhh_Task_Template.c/.h` | Task 模块四件套完整模板 |
 | `xhh_Event_Template.c/.h` | 事件枚举 + Trigger + Handle 骨架 |
-| `xhh_Mode_Template.c` | 状态机枚举 + Change + Handle 骨架 |
+| `xhh_Mode_Template.c/.h` | 状态机枚举 + Change + Handle 骨架(.h 放枚举定义,.c 放实现) |
 | `xhh_Task_Flash_Template.c` | Flash 结构体 + Get/Save/IS_Valid/Clean 骨架 |
 
 ---
@@ -84,7 +86,7 @@
 - [ ] **状态一致性**：事件 case 内多模块联动是否一次性设置完，没有状态改一半
 - [ ] **守卫**：Task `_Loop` 首句 `if (en == 0) return;` 在；参数 `if (NULL) return` 在
 - [ ] **中断禁区**：中断里没有协议解析/事件触发/Flash 读写
-- [ ] **持久化**：Flash 读写经 `xhh_Task_Flash`，没散写 `Flash_Write`；新字段加了 `IS_Valid` + `Clean` 默认值 + 双向 `Update`
+- [ ] **持久化**：Flash 读写经 `xhh_Task_Flash`，没散写 `xhh_BSP_Flash_Write`；新字段加了 `IS_Valid` + `Clean` 默认值 + 双向 `Update`
 - [ ] **路径审查**：涉及协议/状态机/持久化的改动，确认完整读写链路而非只看单函数
 - [ ] **TODO 注释**：遗留 TODO 用 `//TODO` 行首格式，便于 grep
 - [ ] **调试残留**：没有遗留的 `XHH_DEBUG` 高频日志、测试 hook、编译开关忘关

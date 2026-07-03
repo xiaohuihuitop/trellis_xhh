@@ -84,9 +84,10 @@ uint8_t xhh_IS_Motor_Run(void);
 ## 类型与宏
 
 - 类型用 `typedef ... _t;`,后缀 `_t`
-- 对象类型可去掉 `xhh_` 前缀,只保留 `_t`:`Motor_Obj_t`、`xhh_Event_t`
+- **系统级核心类型保留 `xhh_` 前缀**:`xhh_Event_t`、`xhh_Mode_t`、`xhh_SYS_t`、`xhh_BSP_GPIO_ID_t`
+- **业务对象类型可去 `xhh_` 前缀**,用 `<模块>_Obj_t` 形式:`Motor_Obj_t`、`Template_Obj_t`
 - 枚举值用模块前缀:`xhh_SYS_Run`、`MOTOR_MODE_NORMAL`、`LED_...`
-- 宏全大写 + 下划线,常带模块前缀:`KEY_SHAKE_TIME`、`PROTOCOLS_SET_SYS`、`FLASH_USER_DATA_ADDR`
+- 宏全大写 + 下划线,常带模块前缀:`KEY_SHAKE_TIME`、`PROTOCOLS_SET_SYS`、`XHH_BSP_FLASH_PAGE_SIZE`
 
 ```c
 // xhh_Module/xhh_Mode/xhh_Mode.h

@@ -38,7 +38,7 @@ BSP 只按**基础外设能力**拆文件:
 | GPIO | `xhh_BSP_GPIO` | `Init/Read(id)/Write(id, level)` |
 | PWM | `xhh_BSP_PWM` | `Init(id)/Set(id, duty)/Update(id_mask)` |
 | ADC | `xhh_BSP_ADC` | `Init/Read(id)/Simp_Loop(obj)` |
-| Flash | `xhh_BSP_Flash` | `Init/Read(id, off, buf, len)/Erase/Write` |
+| Flash | `xhh_BSP_Flash` | `Init/Erase(id)/Read(id, off, buf, len)/Write(id, off, buf, len)` |
 | RTC | `xhh_BSP_RTC` | `Init/ResetCount/GetCount/GetHz` |
 | Power | `xhh_BSP_Power` | `Init/IsLost/EnterSleep` |
 | System | `xhh_BSP_System` | `IT_Disable/IT_Enable`(可重入临界区) |

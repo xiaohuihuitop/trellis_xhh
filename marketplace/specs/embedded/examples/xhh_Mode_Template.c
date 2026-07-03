@@ -1,30 +1,15 @@
+// ===== 项目占位（复制后必须替换/确认已定义）=====
+// xhh_Mode.h → 本模块头(配对骨架 xhh_Mode_Template.h,复制后改名)
+// xhh_Event_Template.h → 事件头
+// xhh_Task_ALL.h → 聚合头(见 xhh_Task_All_Template)
+// g_xhh_user_data → Flash 模块全局(见 xhh_Task_Flash_Template)
+// XHH_DEBUG → 日志宏(见 logging.md,在 main.h 定义)
+
 #include "xhh_Mode.h"
 #include "xhh_Event_Template.h"
 #include "xhh_Task_ALL.h"
 
-// ===== 状态枚举 =====
-typedef enum
-{
-	xhh_SYS_Null = 0,
-	xhh_SYS_Init,
-	xhh_SYS_PowerON,
-	xhh_SYS_PowerOFF,
-	xhh_SYS_Run,
-	xhh_SYS_Charge,
-	xhh_SYS_ERR,
-	xhh_SYS_Wake,
-	// TODO: 加你的状态
-} xhh_SYS_t;
-
-// ===== 子步枚举 =====
-typedef enum
-{
-	xhh_SYS_Step_Entry = 0,
-	xhh_SYS_Step_Ing,
-	xhh_SYS_Step_Done,
-} xhh_SYS_Step_t;
-
-// ===== 状态机变量 =====
+// ===== 状态机变量(枚举定义在 xhh_Mode.h) =====
 xhh_SYS_t xhh_SYS_n = xhh_SYS_Null;
 xhh_SYS_t xhh_SYS_f = xhh_SYS_Null;          // 前一状态(former)
 xhh_SYS_Step_t xhh_SYS_Step_n = xhh_SYS_Step_Entry;
@@ -55,7 +40,7 @@ void xhh_SYS_Handle(void)
 		}
 		else if (xhh_SYS_Step_n == xhh_SYS_Step_Ing)
 		{
-			if (xhh_SYS_Loop_Count < 1000)
+			if (xhh_SYS_Loop_Count < 65535)
 				xhh_SYS_Loop_Count++;
 			if (xhh_SYS_Loop_Count >= 200)
 				xhh_SYS_Change(xhh_SYS_PowerON);

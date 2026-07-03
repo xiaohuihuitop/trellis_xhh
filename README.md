@@ -46,6 +46,7 @@ trellis_spec/
 │           ├── README.md
 │           ├── xhh_module/                      # xhh_Module 业务层规范(11 个 .md)
 │           └── guides/                         # 思考指南(6 个 .md)
+│           └── examples/                       # 代码骨架(8 个 .c/.h,部署后移到 .trellis/examples/)
 ├── .gitignore
 └── README.md
 ```

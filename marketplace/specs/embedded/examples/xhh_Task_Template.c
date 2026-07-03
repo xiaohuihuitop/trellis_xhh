@@ -1,3 +1,8 @@
+// ===== 项目占位（复制后必须替换/确认已定义）=====
+// xhh_BSP_GPIO_ID_TEMPLATE_EN/OUT → 在 xhh_BSP_GPIO.h 的 xhh_BSP_GPIO_ID_t 枚举里加(见 xhh_BSP_Template)
+// xhh_Task_ALL.h → 聚合头(见 xhh_Task_All_Template)
+// xhh_Task.h → Task 公共头
+
 #include "xhh_Task_Template.h"
 #include "xhh_Task_ALL.h"
 #include "xhh_BSP_GPIO.h"   // 硬件走 BSP 公共层(见 bsp.md),不直接调厂商 API

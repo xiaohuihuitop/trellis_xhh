@@ -1,3 +1,6 @@
+// ===== 项目占位（复制后必须替换/确认已定义）=====
+// xhh_Task_ALL.h → 聚合头(否则下方各 Task _Cmd 调用编译不过,见 xhh_Task_All_Template)
+
 #ifndef __XHH_EVENT_H__
 #define __XHH_EVENT_H__
 
@@ -26,7 +29,12 @@ typedef enum
 #define xhh_Event_Parameter_ID_Key   0x33330000
 
 // ===== 接口 =====
+/// @brief 触发事件(写全局单槽,新事件覆盖未处理的旧事件)
+/// @param event 事件枚举值
+/// @param xhh_Event_Parameter 参数(高16来源ID / 低16数据)
 void xhh_Event_Trigger(xhh_Event_t event, uint32_t xhh_Event_Parameter);
+
+/// @brief 分发事件(主循环 10ms 调:取出即清零 + 提取参数 + switch)
 void xhh_Event_Handle(void);
 
 #endif

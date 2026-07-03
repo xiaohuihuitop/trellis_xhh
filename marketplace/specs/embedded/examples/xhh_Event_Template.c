@@ -1,3 +1,8 @@
+// ===== 项目占位（复制后必须替换/确认已定义）=====
+// xhh_Mode.h → 状态机头(声明 xhh_SYS_Change,见 xhh_Mode_Template)
+// xhh_Task_UI_Set_ERR/xhh_Task_BAT_Cmd/xhh_Task_Key_Cmd/xhh_Task_Motor_Cmd → 各 Task 模块接口
+// XHH_DEBUG → 日志宏(见 logging.md,在 main.h 定义)
+
 #include "xhh_Event_Template.h"
 #include "xhh_Mode.h"
 
@@ -18,13 +23,14 @@ void xhh_Event_Handle(void)
 {
 	xhh_Event_t event_temp = Event_n;
 	Event_n = xhh_Event_Null;                 // 取出即清零
+	uint32_t param = xhh_Event_Parameter_n;   // 先存参数(见 event-system.md),再清零
 	xhh_Event_Parameter_n = xhh_Event_Parameter_ID_NULL;
 
 	if (event_temp == xhh_Event_Null)
 		return;
 
-	// 拆参数(高16来源 / 低16数据)
-	uint16_t data_16 = (uint16_t)(xhh_Event_Parameter_n & 0xffff);
+	// 拆参数(高16来源 / 低16数据)——从 param 提取,不是从已清零的全局
+	uint16_t data_16 = (uint16_t)(param & 0xffff);
 	uint8_t data_h = (uint8_t)((data_16 >> 8) & 0xff);
 	uint8_t data_l = (uint8_t)(data_16 & 0xff);
 	(void)data_h; (void)data_l;               // 按需用

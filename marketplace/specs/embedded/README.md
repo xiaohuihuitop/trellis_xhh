@@ -35,9 +35,11 @@ embedded/
 ├── README.md                     # 本文件
 ├── examples/                     # ⚠ 辅助资源：部署后必须移出 spec 层
 │   ├── README.md
+│   ├── xhh_BSP_Template.c/.h     # BSP 公共层骨架(GPIO 示例类别)
+│   ├── xhh_Task_All_Template.c/.h # 聚合层骨架
 │   ├── xhh_Task_Template.c/.h
 │   ├── xhh_Event_Template.c/.h
-│   ├── xhh_Mode_Template.c
+│   ├── xhh_Mode_Template.c/.h
 │   └── xhh_Task_Flash_Template.c
 ├── xhh_module/                   # ✅ spec layer：xhh_Module 业务层规范(11 个 .md)
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check

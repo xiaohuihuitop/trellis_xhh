@@ -78,7 +78,7 @@ void xhh_SYS_Handle(void)
             xhh_SYS_Step_n++;            // Entry 做完进 Ing
         }
         else if (xhh_SYS_Step_n == xhh_SYS_Step_Ing) {
-            if (xhh_SYS_Loop_Count < 1000) { xhh_SYS_Loop_Count++; }
+            if (xhh_SYS_Loop_Count < 65535) { xhh_SYS_Loop_Count++; }
             if (xhh_SYS_Loop_Count >= 200) { xhh_SYS_Change(xhh_SYS_PowerOFF); }
         }
         break;
@@ -88,7 +88,7 @@ void xhh_SYS_Handle(void)
 子步推进模式：
 - Entry 内做完初始化后 `xhh_SYS_Step_n++` 进 Ing
 - Ing 内累加 `Loop_Count`，到阈值调 `xhh_SYS_Change` 切走
-- `Loop_Count` 上限保护：`if (xhh_SYS_Loop_Count < 1000) xhh_SYS_Loop_Count++;`
+- `Loop_Count` 上限保护：`if (xhh_SYS_Loop_Count < 65535) xhh_SYS_Loop_Count++;`（uint16_t 上限，@10ms 周期可计 655 秒；超长状态需改用更长 tick 单位或 uint32_t）
 
 ---
 

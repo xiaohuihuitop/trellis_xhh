@@ -8,11 +8,14 @@
 
 | 文件 | 用途 | 复制后改成 |
 |------|------|-----------|
+| `xhh_BSP_Template.c/.h` | BSP 公共层骨架(GPIO 示例类别,逻辑 ID 枚举 + switch 映射 + 平台隔离) | `Template/TEMPLATE` → 类别名(如 `GPIO/GPIO`),文件名 → `xhh_BSP_GPIO.c/.h` |
+| `xhh_Task_All_Template.h` / `.c` | 聚合层骨架(聚合 include + 转发各模块四件套) | 文件名 → `xhh_Task_ALL.h` / `xhh_Task.c`,按需增减 Task 头和转发 |
 | `xhh_Task_Template.h` | Task 模块头文件(四件套 + 类型 + 宏) | `Template` → 你的模块名(如 `Temp`) |
 | `xhh_Task_Template.c` | Task 模块实现(四件套 + 调 `xhh_BSP_*` + Loop 守卫) | 同上 + 填业务逻辑/换算 + 注册逻辑 ID |
 | `xhh_Event_Template.h` | 事件枚举 + 参数 ID 宏 | 加你的事件值 |
 | `xhh_Event_Template.c` | Trigger + Handle switch 骨架 | 加你的事件 case |
-| `xhh_Mode_Template.c` | 状态机枚举 + Change + Handle 骨架 | 加你的状态 + 子步逻辑 |
+| `xhh_Mode_Template.h` | 状态机头(状态/子步枚举 + 变量 extern + 接口) | 加你的状态枚举值 |
+| `xhh_Mode_Template.c` | 状态机实现(Change + Handle switch 骨架) | 加你的状态 + 子步逻辑 |
 | `xhh_Task_Flash_Template.c` | Flash 结构体 + Get/Save/IS_Valid/Clean | 填你的字段 + 默认值 |
 
 ---
