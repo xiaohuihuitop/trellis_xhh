@@ -7,11 +7,11 @@
 ## 总则
 
 - 所有自研标识符统一加 `xhh_` 前缀(`xhh` = 作者名缩写,跨项目通用前缀)
-- 命名风格统一 snake_case(下划线小写)
+- 命名使用 XHH 分层风格：`xhh_<层>_<模块>_<动词>`；模块和动词使用首字母大写，单词之间以下划线分隔
 - **缩写词必须全大写**:`LED` / `USB` / `BLE` / `ADC` / `UART` / `I2C` / `SPI` / `PWM`
-  - 正确:`xhh_Task_LED_Init`、`xhh_Task_ADC_Cmd`
-  - 错误:`xhh_Task_Led_Init`、`xhh_Task_adc_Cmd`
-- 厂商代码(`HAL/`、`LIB/`、`Src/`、`Inc/` 等平台层)保持原命名,不统一改
+  - 正确:`xhh_Task_LED_Cmd`、`xhh_Task_ADC_Cmd`
+  - 错误:`xhh_Task_Led_Cmd`、`xhh_Task_adc_Cmd`
+- `Platform/` 内厂商代码保持 SDK 原命名，不统一修改内部 `HAL/`、`LIB/`、`Src/`、`Inc/` 等名称
 
 > 历史代码存在缩写词大小写混用(如 `Led`/`MOTOR`/`swiper`)。新代码必须全大写。改动历史模块时顺手统一该模块的缩写词大小写;不单独开重命名任务。
 
@@ -21,29 +21,28 @@
 
 | 类别 | 形式 | 示例 |
 |------|------|------|
-| 模块接口 | `xhh_<层>_<模块>_<动词>` | `xhh_Task_Motor_Init` |
+| 模块接口 | `xhh_<层>_<模块>_<动词>` | `xhh_Task_Motor_Cmd` |
 | 谓词(布尔查询) | `xhh_IS_<...>`,返回 `uint8_t` 0/1 | `xhh_IS_Can_KEY`、`xhh_IS_Motor_Run` |
 | BSP 硬件操作 | `<模块>_BSP_Set_<对象>`(static,不进头文件) | `Motor_BSP_Set_EN`、`Motor_BSP_Set_Level` |
 | 状态切换 | `xhh_SYS_Change` / `xhh_Mode_Change` | `xhh_SYS_Change(xhh_SYS_Run)` |
 | 事件触发/处理 | `xhh_Event_Trigger` / `xhh_Event_Handle` | — |
-| BSP 公开接口 | `xhh_BSP_<类别>_<动词>`(缩写词全大写 GPIO/PWM/ADC/RTC/IT) | `xhh_BSP_GPIO_Read`、`xhh_BSP_Flash_Write`、`xhh_BSP_System_IT_Disable` |
+| BSP 公开接口 | `xhh_BSP_<类别>_<动词>`(缩写词全大写 GPIO/PWM/ADC/RTC/IT/ERR) | `xhh_BSP_SYS_ERR_Handle`、`xhh_BSP_GPIO_Read`、`xhh_BSP_PWM1_Start` |
 
 ### BSP 专用命名(详见 bsp.md)
 
 | 元素 | 规则 | 示例 |
 |------|------|------|
-| 逻辑 ID 枚举类型 | `xhh_BSP_<类别>_ID_t` | `xhh_BSP_GPIO_ID_t` |
-| 逻辑 ID 枚举值 | `xhh_BSP_<类别>_ID_<对象>` | `xhh_BSP_GPIO_ID_KEY_MATCH` |
+| BSP 公开参数类型 | `xhh_BSP_<类别>_<参数>_t` | `xhh_BSP_GPIO_Signal_t` |
+| PWM 独立函数族 | `xhh_BSP_PWM<n>_<动词>` | `xhh_BSP_PWM1_Set_Duty` |
 | BSP 公开宏 | `XHH_BSP_*` 全大写 | `XHH_BSP_FLASH_LIGHT_CONFIG_SIZE` |
-| BSP 内部 static | `app_<类别>_<动词>` | `app_pwm_scale`、`app_flash_get_region` |
-| 物理参数宏(在 .c 内) | `APP_<类别>_<对象>_*` 全大写 | `APP_GPIO_KEY_MATCH_PIN`、`APP_FLASH_LIGHT_CONFIG_ADDR` |
-| BSP 头文件保护 | `__XHH_BSP_<类别>_H__` | `__XHH_BSP_GPIO_H__` |
+| BSP 内部 static | `xhh_BSP_<类别>_<动词>` | `xhh_BSP_GPIO_Resolve`、`xhh_BSP_PWM_Init_Time_Base` |
+| BSP 头文件保护 | `XHH_BSP_<类别>_H` | `XHH_BSP_GPIO_H` |
 
 动词后置约定(常用后缀):
 
 | 后缀 | 含义 |
 |------|------|
-| `_Init` / `_DeInit` | 模块初始化 / 反初始化 |
+| `_Init` / `_DeInit` | BSP 或 Component 的真实硬件生命周期；Task 禁止提供 |
 | `_Cmd(uint8_t)` | 使能控制(0=关,1=开) |
 | `_Loop` | 主循环周期调用 |
 | `_Set_*` / `_Get_*` | 写 / 读 对象字段 |
@@ -54,8 +53,6 @@
 
 ```c
 // xhh_Module/xhh_Task/xhh_Task_Motor.h
-void xhh_Task_Motor_Init(void);
-void xhh_Task_Motor_DeInit(void);
 void xhh_Task_Motor_Cmd(uint8_t cmd);
 void xhh_Task_Motor_Apply_Mode_Fun(void);
 
@@ -84,7 +81,7 @@ uint8_t xhh_IS_Motor_Run(void);
 ## 类型与宏
 
 - 类型用 `typedef ... _t;`,后缀 `_t`
-- **系统级核心类型保留 `xhh_` 前缀**:`xhh_Event_t`、`xhh_Mode_t`、`xhh_SYS_t`、`xhh_BSP_GPIO_ID_t`
+- **系统级核心类型保留 `xhh_` 前缀**:`xhh_Event_t`、`xhh_Mode_t`、`xhh_SYS_t`、`xhh_BSP_GPIO_Signal_t`
 - **业务对象类型可去 `xhh_` 前缀**,用 `<模块>_Obj_t` 形式:`Motor_Obj_t`、`Template_Obj_t`
 - 枚举值用模块前缀:`xhh_SYS_Run`、`MOTOR_MODE_NORMAL`、`LED_...`
 - 宏全大写 + 下划线,常带模块前缀:`KEY_SHAKE_TIME`、`PROTOCOLS_SET_SYS`、`XHH_BSP_FLASH_PAGE_SIZE`
@@ -111,12 +108,12 @@ typedef enum {
 ## 头文件保护宏
 
 - **只用 `#ifndef`,禁用 `#pragma once`**
-- 统一格式:`__XHH_<MODULE>_H__`(双下划线包裹,全大写)
+- 统一格式：`XHH_<MODULE>_H`（全大写，不使用实现保留的双下划线开头标识符）
 
 ```c
 // 正确
-#ifndef __XHH_TASK_MOTOR_H__
-#define __XHH_TASK_MOTOR_H__
+#ifndef XHH_TASK_MOTOR_H
+#define XHH_TASK_MOTOR_H
 ...
 #endif
 
@@ -125,4 +122,4 @@ typedef enum {
 // XHH_TASK_XHH_TASK_BAT_H_
 ```
 
-历史文件的保护宏若不属于 `__XHH_<MODULE>_H__` 形式,改动该文件时顺手统一。
+历史文件的保护宏若不属于 `XHH_<MODULE>_H` 形式，改动该文件时顺手统一。

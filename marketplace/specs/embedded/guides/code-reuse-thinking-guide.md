@@ -19,7 +19,7 @@
 | `xhh_Task_Flash` | 所有 Flash 读写 | 加字段进结构体，不要散写 Flash |
 | `xhh_Event` | 多模块联动 | 加事件枚举 + case，不要跨 Task 直调 |
 | `xhh_Mode` | 系统状态 | 加状态枚举 + Change，不要另建状态机 |
-| `xhh_Task_<X>` 四件套 | 单一功能域 | 加 `_Set_*` / `_Apply_*`，不要在 main_task 堆逻辑 |
+| `xhh_Task_<X>` | 单一功能域 | 加 `_Cmd/_Loop/_Set_*` / `_Apply_*`，不要在 main_task 堆逻辑 |
 | `xhh_BSP_Flash_Read/Write/Erase` | Flash 原语(BSP 层) | 经 `xhh_Task_Flash` 调,不另封装 |
 
 ---
@@ -32,7 +32,7 @@
 | 多个 Task 各自写 Flash | Motor/BAT 各调 `xhh_BSP_Flash_Write` | 集中到 `xhh_Task_Flash` |
 | 重复的命令拼包逻辑 | 多处复制 | 抽到协议层 |
 | 重复的范围校验 | 多处写同一 min/max 检查 | 抽 `IS_Valid` 谓词 |
-| 新建功能不建 Task 模块 | 在 `main_task.c` 堆逻辑 | 建 `xhh_Task_<X>` 四件套 |
+| 新建功能不建 Task 模块 | 在 `main_task.c` 堆逻辑 | 建 `xhh_Task_<X>`，只提供真实业务接口，不加 Init/DeInit |
 
 ---
 

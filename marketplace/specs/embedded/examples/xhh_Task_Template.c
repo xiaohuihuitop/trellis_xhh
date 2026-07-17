@@ -1,76 +1,40 @@
-// ===== 项目占位（复制后必须替换/确认已定义）=====
-// xhh_BSP_GPIO_ID_TEMPLATE_EN/OUT → 在 xhh_BSP_GPIO.h 的 xhh_BSP_GPIO_ID_t 枚举里加(见 xhh_BSP_Template)
-// xhh_Task_ALL.h → 聚合头(见 xhh_Task_All_Template)
-// xhh_Task.h → Task 公共头
-
 #include "xhh_Task_Template.h"
-#include "xhh_Task_ALL.h"
-#include "xhh_BSP_GPIO.h"   // 硬件走 BSP 公共层(见 bsp.md),不直接调厂商 API
 
-// ===== 模块内状态(static 封装) =====
-static volatile uint8_t xhh_task_template_en = 0;   // 使能位(必须 static volatile)
-static Template_Obj_t Template = {0};               // 模块对象
+#include "xhh_BSP_GPIO.h"
 
-// ===== 业务参数→硬件值换算放 Task 内 static(见 bsp.md) =====
-static uint16_t Template_ValueToDuty(uint8_t value);
-
-// ===== 四件套 =====
-
-void xhh_Task_Template_Init(void)
-{
-	// GPIO 初始化已由 BSP_Init() 统一调 xhh_BSP_GPIO_Init() 完成,这里只做模块自身初始化
-	// 如需 PWM 等其他 BSP,按需调 xhh_BSP_PWM_Init(xhh_BSP_PWM_ID_TEMPLATE_OUT);
-}
-
-void xhh_Task_Template_DeInit(void)
-{
-	// 反初始化:关硬件输出
-	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_TEMPLATE_EN, 0);
-}
+static volatile uint8_t xhh_task_template_en = 0U;
+static Template_Obj_t template_obj = {TEMPLATE_MODE_A, TEMPLATE_VALUE_MIN};
 
 void xhh_Task_Template_Cmd(uint8_t cmd)
 {
-	if (cmd)
+	xhh_task_template_en = cmd;
+	if (cmd == 0U)
 	{
-		xhh_task_template_en = 1;
-	}
-	else
-	{
-		xhh_task_template_en = 0;
-		xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_TEMPLATE_EN, 0);   // 关时复位硬件
+		xhh_BSP_GPIO_Write(xhh_BSP_GPIO_TEMPLATE_ENABLE, 0U);
 	}
 }
 
-/// 周期调用(在 main_task.c 的 10ms/100ms 事件里调)
 void xhh_Task_Template_Loop(void)
 {
-	if (xhh_task_template_en == 0)    // 首句守卫(必须)
+	if (xhh_task_template_en == 0U)
+	{
 		return;
+	}
 
-	// TODO: 填模块周期逻辑
-	// 硬件输出经 BSP,业务参数已在内部换算成 duty/level
-	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_TEMPLATE_OUT, Template.value > 0 ? 1 : 0);
+	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_TEMPLATE_ENABLE,
+						   template_obj.value > TEMPLATE_VALUE_MIN);
 }
 
-// ===== Set/Get =====
-
-void xhh_Task_Template_Set_Obj(Template_Obj_t *obj)
+void xhh_Task_Template_Set_Obj(const Template_Obj_t *obj)
 {
-	if (obj == NULL)                  // guard early
+	if (obj == NULL)
+	{
 		return;
-	Template = *obj;
+	}
+	template_obj = *obj;
 }
 
 Template_Obj_t xhh_Task_Template_Get_Obj(void)
 {
-	return Template;
-}
-
-// ===== 业务参数→硬件值换算(放 Task 内,不进 BSP) =====
-
-static uint16_t Template_ValueToDuty(uint8_t value)
-{
-	// TODO: 按 PWM duty 范围换算 value(0~100)→duty
-	(void)value;
-	return 0;
+	return template_obj;
 }

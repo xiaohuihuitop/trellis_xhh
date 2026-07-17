@@ -77,6 +77,7 @@
 - 新代码延续现有 `switch` 驱动风格
 - **关键逻辑注释以 `AI:` 开头**，便于追溯 AI 生成内容（如 `//AI: 这里延迟避免上电竞争` / `///AI:`）
 - **对外函数接口写 Doxygen 注释**（`@brief` / `@param` / `@return`），`@brief` 可带 `AI:` 前缀
+- **占位函数允许用于框架统一**：函数体内必须用 `AI:` 注释说明原因、当前行为和启用条件；不得默认成功、伪造硬件值或执行 fallback
 - **代码事实高于文档**：项目文档与代码冲突时，以代码为准，并把冲突列为待确认事项告知用户，不擅自改代码迁就文档
 
 ---
@@ -113,6 +114,16 @@
 
 ## Code Review Checklist
 
+- [ ] 源码是否收口在 `APP/`、`xhh_Module/`、`xhh_BSP/`、`Platform/`、`Components/` 五个根目录？
+- [ ] 单一 IDE 工程文件是否直接位于 `Project/`，没有重复的工具名子目录？
+- [ ] `Platform/` 是否只包含当前项目唯一 MCU，没有多芯片实现或大段平台切换宏？
+- [ ] `Platform/Src` 是否只保留厂家 SDK、启动、系统、配置和厂家中断骨架，没有项目手写的 `MX_*`、外设 Handle、DMA 或外设初始化封装？
+- [ ] BSP 专属 IRQ 是否归对应 `xhh_BSP_*.c`，且厂家中断骨架没有反向 include `xhh_BSP`？
+- [ ] 当前未使用的外设是否已从工程移除，且没有为了目录完整新增空 BSP？
+- [ ] `xhh_Module/` 是否只依赖 `xhh_BSP/` 和 `Components/`，没有直接依赖 `Platform/`？
+- [ ] `Components/` 是否保持产品和 MCU 无关；如需硬件能力，是否只 include `xhh_BSP/` 公共头，没有 include `main.h`、`xhh_Module/` 或厂商头？
+- [ ] ADC 公开头是否只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，厂家硬件通道值是否只存在于 `xhh_BSP_ADC.c`？
+- [ ] 占位函数是否均在函数体内使用 `AI:` 注释说明原因、当前行为和启用条件，并且没有默认成功、伪造硬件值或静默 fallback？
 - [ ] 改动是否尊重现有模块边界？
 - [ ] 事件/状态/Task 顺序会不会导致状态改一半？
 - [ ] 数值范围、枚举上下界是否校验？
@@ -125,7 +136,9 @@
 - [ ] 持久化是否经 `xhh_BSP_Flash_*` 而非裸 `EEPROM_*`/`HAL_FLASH_*`？
 - [ ] 是否新增了设备型 BSP（`xhh_BSP_Key`/`xhh_BSP_Motor` 等，应禁）？
 - [ ] 公共头是否 include 了芯片 SDK 头（应只在 `.c`）？
-- [ ] 新 Task 模块是否四件套齐全 + 注册到 `xhh_Task_ALL`？
+- [ ] Task 是否只暴露真实需要的 Cmd/Loop/Get/Set，且没有 `_Init/_DeInit` 或硬件 Config 接口？
+- [ ] APP 是否直接调用各 `xhh_BSP_*_Init`，Task 中没有硬件初始化？
+- [ ] 除 `xhh_BSP_SYS.c` 的平台适配实现外，是否仍有 `HAL_Delay` 等厂家延时调用？
 
 ---
 

@@ -2,8 +2,8 @@
 // 复制后改名为 xhh_Mode.h(配对 xhh_Mode.c)
 // 把 xhh_SYS_t 枚举值换成本项目真实状态全集(见 state-machine.md "初始化后应补充的项目事实")
 
-#ifndef __XHH_MODE_H__
-#define __XHH_MODE_H__
+#ifndef XHH_MODE_H
+#define XHH_MODE_H
 
 #include <stdint.h>
 

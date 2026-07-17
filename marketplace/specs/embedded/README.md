@@ -11,16 +11,17 @@
 本模板基于真实项目代码考古提取，编码了以下开发者的工程习惯（非空模板）：
 
 ### 分层架构
-协议入口 → 事件分发 → 状态机 → Task 模块 → BSP 支撑。厂商层（SRC/HAL/LIB/Profile）不改源码，只调 config.h。
+固定五个源码目录 `APP/`、`xhh_Module/`、`xhh_BSP/`、`Platform/`、`Components/`，并使用 `Project/`、`Doc/` 两个工程辅助目录。控制流为协议入口 → 事件分发 → 状态机 → Task 模块/Components → xhh_BSP → 当前唯一 Platform；厂商源码原则上不改，只调整允许的配置文件。
 
 ### 核心模式(见 xhh_module/ 各 pattern 文件)
-- **命名约定**：`xhh_` 前缀 + snake_case + 缩写词全大写 + `_t` 后缀 + 头文件保护 `__XHH_<MODULE>_H__`
-- **Task 模块四件套**：`_Init/_DeInit/_Cmd(uint8_t)/_Loop` + static volatile 使能位 + Loop 首句守卫 + `xhh_Task_ALL.h` 聚合
+- **命名约定**：`xhh_` 前缀 + XHH 分层命名 + 缩写词全大写 + `_t` 后缀 + 头文件保护 `XHH_<MODULE>_H`
+- **Task 模块接口**：不提供 `_Init/_DeInit`；使用 `_Cmd(uint8_t)` 控制业务状态，周期模块使用 `_Loop` + static volatile 使能位 + 首句守卫
 - **状态机**：枚举状态 + 子步(Entry/Ing/Done) + Loop_Count + 单 switch + 集中 `xhh_SYS_Change`
 - **事件系统**：全局变量单槽 + 参数位编码 + Trigger/Handle + 无 RTOS 队列
 - **Flash 持久化**：结构体直存 + 字段校验 + 无效清默认值 + 集中模块
 - **中断/关键码**：放 RAM 执行提速（段/属性依 MCU）+ 中断只做轻量 + 共享 volatile + TMOS 调度
 - **日志**：`XHH_DEBUG` 宏 + 编译期开关默认关
+- **占位接口**：允许为框架统一保留，占位函数体内必须用 `AI:` 注释明确原因、当前行为和启用条件，不得伪造成功或硬件值
 
 ### 格式规约
 - 统一 Tab 缩进
@@ -44,7 +45,7 @@ embedded/
 ├── xhh_module/                   # ✅ spec layer：xhh_Module 业务层规范(11 个 .md)
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
-│   ├── task-module.md    # Task 模块四件套
+│   ├── task-module.md    # Task Cmd/Loop 与 BSP 初始化边界
 │   ├── state-machine.md  # 状态机范式
 │   ├── event-system.md           # 事件系统
 │   ├── interrupt.md  # 中断与关键码

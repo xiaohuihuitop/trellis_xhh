@@ -1,8 +1,8 @@
 // ===== 项目占位（复制后必须替换/确认已定义）=====
 // xhh_Task_ALL.h → 聚合头(否则下方各 Task _Cmd 调用编译不过,见 xhh_Task_All_Template)
 
-#ifndef __XHH_EVENT_H__
-#define __XHH_EVENT_H__
+#ifndef XHH_EVENT_H
+#define XHH_EVENT_H
 
 #include "xhh_Task_ALL.h"
 

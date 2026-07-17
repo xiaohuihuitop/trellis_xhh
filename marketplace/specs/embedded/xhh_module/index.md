@@ -1,16 +1,17 @@
 # xhh_Module 开发规范
 
-> 这里的 "xhh_module" 约束 `xhh_Module/` 业务层(Event/Mode/Task/BSP),不是平台层,也不是 web 服务。
+> 这里的 "xhh_module" 主要约束 `xhh_Module/` 业务层(Event/Mode/Task)，并定义它与根目录 `APP/`、`xhh_BSP/`、`Platform/`、`Components/` 的边界。
 
 ---
 
 ## 概述
 
 - 工程以 C 语言为主
-- 核心控制流：协议入口 → 事件分发 → 系统状态机 → 功能 Task 模块 → BSP 公共层
+- 固定工程结构：五个源码目录 `APP/`、`xhh_Module/`、`xhh_BSP/`、`Platform/`、`Components/`，外加 `Project/`、`Doc/` 两个辅助目录
+- 核心控制流：协议入口 → 事件分发 → 系统状态机 → 功能 Task 模块/Components → xhh_BSP 公共层
 - 重视可控性、可验证性、板级调试，而不是抽象层层封装
-- 厂商层（SRC/HAL/LIB/Profile）不改源码，只在 config.h 调宏
-- 硬件操作集中在 `xhh_BSP/`,Task 不直接碰厂商 API
+- 每个项目只有一个 MCU 平台，厂商层全部收口到根目录 `Platform/`
+- 硬件操作集中在根目录 `xhh_BSP/`，Task 和 Components 不直接碰厂商 API
 
 ---
 
@@ -21,17 +22,17 @@
 | 文档 | 说明 |
 |------|------|
 | [命名约定](./naming-conventions.md) | xhh_ 前缀、缩写词全大写、_t 后缀、头文件保护宏 |
-| [Task 模块模式](./task-module.md) | 四件套接口、使能位守卫、ALL 聚合、调 `xhh_BSP_*` |
+| [Task 模块模式](./task-module.md) | 按需 Cmd/Loop、使能位守卫、ALL Cmd 聚合、调 `xhh_BSP_*` |
 | [状态机模式](./state-machine.md) | 枚举+子步+计数+switch、集中转换 |
 | [事件系统](./event-system.md) | 全局变量单槽、参数编码、Trigger/Handle |
 | [中断与关键码](./interrupt.md) | 跨平台原则、时敏输出/安全关断例外 |
-| [BSP 公共层](./bsp.md) | 逻辑 ID 抽象、能力白名单、设备型黑名单、平台隔离 |
+| [BSP 公共层](./bsp.md) | BSP 简洁原则、SYS 集中初始化、Timer/PWM/IWDG/SPI/ADC 接口和平台隔离 |
 
 ### 边界规范（各层怎么处理）
 
 | 文档 | 说明 |
 |------|------|
-| [目录结构](./directory-structure.md) | 分层与目录布局、厂商层约定 |
+| [目录结构](./directory-structure.md) | 五个源码目录、Project/Doc 辅助目录、单 MCU 平台和依赖方向 |
 | [Flash 持久化](./flash.md) | 结构体直存、校验、默认值、集中模块 |
 | [异常与边界处理](./error-handling.md) | guard early、返回码、状态切换、无 assert |
 | [日志规范](./logging.md) | XHH_DEBUG 宏、编译期开关 |
@@ -48,9 +49,9 @@
 
 | 骨架 | 用途 |
 |------|------|
-| `xhh_BSP_Template.c/.h` | BSP 公共层骨架(GPIO 示例类别,逻辑 ID 枚举 + switch 映射 + 平台隔离) |
-| `xhh_Task_All_Template.h/.c` | 聚合层骨架(聚合 include + 转发各模块四件套) |
-| `xhh_Task_Template.c/.h` | Task 模块四件套完整模板 |
+| `xhh_BSP_Template.c/.h` | BSP 公共层骨架（逻辑信号 + BSP 内固定硬件映射） |
+| `xhh_Task_All_Template.h/.c` | 聚合层骨架（聚合 include + 转发各模块 Cmd） |
+| `xhh_Task_Template.c/.h` | Task 按需 Cmd/Loop/Get/Set 模板 |
 | `xhh_Event_Template.c/.h` | 事件枚举 + Trigger + Handle 骨架 |
 | `xhh_Mode_Template.c/.h` | 状态机枚举 + Change + Handle 骨架(.h 放枚举定义,.c 放实现) |
 | `xhh_Task_Flash_Template.c` | Flash 结构体 + Get/Save/IS_Valid/Clean 骨架 |
@@ -63,14 +64,18 @@
 
 - [ ] **定位改动落哪一层**：读 [../guides/protocol-event-state-task-flow.md](../guides/protocol-event-state-task-flow.md) 的决策树，确认这段逻辑该放协议/事件/状态机/Task/中断哪一层
 - [ ] **命名**：新标识符加 `xhh_` 前缀、缩写词全大写（LED/ADC/BLE）、类型 `_t` 后缀——见 [naming-conventions.md](./naming-conventions.md)
-- [ ] **若是新 Task 模块**：规划四件套（`_Init/_DeInit/_Cmd/_Loop`）+ `static volatile` 使能位 + Loop 守卫 + 注册 `xhh_Task_ALL.h`——见 [task-module.md](./task-module.md)
+- [ ] **若是新 Task 模块**：只规划真实需要的 `_Cmd/_Loop/Get/Set`，使用私有状态和 Loop 守卫，并注册 `xhh_Task_ALL.h`——见 [task-module.md](./task-module.md)
 - [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine.md](./state-machine.md)
 - [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
 - [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
 - [ ] **涉及硬件操作**：Task 不直接调厂商 API/引脚号/寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
+- [ ] **涉及 ADC**：上层只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
+- [ ] **涉及 Components 硬件访问**：Components 只调用 `xhh_BSP_*`，不包含 `main.h`、产品层或厂家头——见 [directory-structure.md](./directory-structure.md)
+- [ ] **涉及延时**：统一调用 `xhh_BSP_Delay_ms`；厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的平台适配实现中——见 [bsp.md](./bsp.md)
+- [ ] **存在占位函数**：确认占位是为了框架统一，函数体内有 `AI:` 注释说明原因、当前行为和启用条件，且未返回默认成功或伪造硬件值——见 [error-handling.md](./error-handling.md)
 - [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
 - [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
-- [ ] **新建文件**：直接用 `write` 工具（默认 UTF-8），无文件头注释，Tab 缩进，`__XHH_<MODULE>_H__` 头文件保护
+- [ ] **新建文件**：使用 UTF-8 无 BOM，无文件头注释，Tab 缩进，`XHH_<MODULE>_H` 头文件保护
 - [ ] **要套骨架**：从 `.trellis/examples/` 复制对应骨架，全局替换 `Template` → 模块名
 
 ---

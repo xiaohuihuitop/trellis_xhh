@@ -1,59 +1,60 @@
-// ===== 项目占位（复制后必须替换/确认已定义）=====
-// 1. 顶部 include 的 CONFIG.h → 本项目平台头(WCH 用 CONFIG.h,PY32 用 py32f0xx_hal.h)
-// 2. APP_TEMPLATE_*_PIN 物理宏 → 真实引脚号(查芯片数据手册)
-// 3. GPIOA_ModeCfg/GPIOB_ModeCfg/GPIOB_ReadPortPin → 本平台 GPIO API(WCH 用此类,PY32 用 HAL_GPIO_*)
-// 换 MCU 只改本 .c 实现,.h 接口不变,业务层零改动(见 bsp.md 平台隔离契约)
-
 #include "xhh_BSP_Template.h"
-#include "CONFIG.h"          // 厂商平台头(只在 .c 内 include,不进 .h,见 bsp.md)
 
-// ===== 物理参数宏(只在 .c 内,业务层看不到,命名 APP_<类别>_<对象>_* 全大写) =====
-#define APP_TEMPLATE_OBJ_A_PIN   GPIO_Pin_22
-#define APP_TEMPLATE_OBJ_B_PIN   GPIO_Pin_4
+#include "CONFIG.h"
+#include "xhh_BSP_SYS.h"
 
-// ===== BSP ≠ Task:不写 _Loop/_Cmd/使能位(见 bsp.md "BSP ≠ Task") =====
-// BSP 是无状态服务层,只有 Init + 按类别的 Read/Write/Apply 等
+#define XHH_BSP_TEMPLATE_INPUT_PIN GPIO_Pin_0
+#define XHH_BSP_TEMPLATE_OUTPUT_PIN GPIO_Pin_1
 
-/// @brief 初始化所有逻辑 ID 对应的硬件 GPIO
-void xhh_BSP_Template_Init(void)
+/**
+ * @brief AI:初始化当前平台固定的输入和输出引脚。
+ * @param 无。
+ * @return 无。
+ * @note AI:更换 MCU 或板卡时只修改本文件的厂家资源和初始化参数。
+ */
+void xhh_BSP_TEMPLATE_Init(void)
 {
-	GPIOB_ModeCfg(APP_TEMPLATE_OBJ_A_PIN, GPIO_ModeIN_PU);      // 上拉输入
-	GPIOA_ModeCfg(APP_TEMPLATE_OBJ_B_PIN, GPIO_ModeOut_PP_5mA); // 推挽输出
+	GPIOA_ModeCfg(XHH_BSP_TEMPLATE_INPUT_PIN, GPIO_ModeIN_PU);
+	GPIOA_ResetBits(XHH_BSP_TEMPLATE_OUTPUT_PIN);
+	GPIOA_ModeCfg(XHH_BSP_TEMPLATE_OUTPUT_PIN, GPIO_ModeOut_PP_5mA);
 }
 
-/// @brief 读逻辑 ID 对应引脚电平
-uint8_t xhh_BSP_Template_Read(xhh_BSP_TEMPLATE_ID_t id)
+/**
+ * @brief AI:读取当前平台固定的低电平有效输入。
+ * @param signal 逻辑输入信号名。
+ * @retval 0 信号无效。
+ * @retval 1 信号有效。
+ */
+uint8_t xhh_BSP_TEMPLATE_Read(xhh_BSP_TEMPLATE_Signal_t signal)
 {
-	switch (id)
+	if (signal != xhh_BSP_TEMPLATE_INPUT_ACTIVE)
 	{
-	case xhh_BSP_TEMPLATE_ID_OBJ_A:
-		return (uint8_t)GPIOB_ReadPortPin(APP_TEMPLATE_OBJ_A_PIN);
-
-	case xhh_BSP_TEMPLATE_ID_OBJ_B:
-		return (uint8_t)GPIOA_ReadPortPin(APP_TEMPLATE_OBJ_B_PIN);
-
-	default:
-		return 0;
+		xhh_BSP_SYS_ERR_Handle();
 	}
+
+	return GPIOA_ReadPortPin(XHH_BSP_TEMPLATE_INPUT_PIN) == 0U;
 }
 
-/// @brief 写逻辑 ID 对应引脚电平
-void xhh_BSP_Template_Write(xhh_BSP_TEMPLATE_ID_t id, uint8_t level)
+/**
+ * @brief AI:设置当前平台固定的高电平有效输出。
+ * @param signal 逻辑输出信号名。
+ * @param active 0 表示无效，非 0 表示有效。
+ * @return 无。
+ */
+void xhh_BSP_TEMPLATE_Write(xhh_BSP_TEMPLATE_Signal_t signal, uint8_t active)
 {
-	switch (id)
+	if (signal != xhh_BSP_TEMPLATE_OUTPUT_ENABLE)
 	{
-	case xhh_BSP_TEMPLATE_ID_OBJ_A:
-		// 输入脚不可写,按需改成输出或忽略
-		break;
+		xhh_BSP_SYS_ERR_Handle();
+		return;
+	}
 
-	case xhh_BSP_TEMPLATE_ID_OBJ_B:
-		if (level)
-			GPIOA_SetBits(APP_TEMPLATE_OBJ_B_PIN);
-		else
-			GPIOA_ResetBits(APP_TEMPLATE_OBJ_B_PIN);
-		break;
-
-	default:
-		break;
+	if (active != 0U)
+	{
+		GPIOA_SetBits(XHH_BSP_TEMPLATE_OUTPUT_PIN);
+	}
+	else
+	{
+		GPIOA_ResetBits(XHH_BSP_TEMPLATE_OUTPUT_PIN);
 	}
 }

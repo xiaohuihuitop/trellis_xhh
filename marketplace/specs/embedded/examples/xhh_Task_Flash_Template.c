@@ -93,23 +93,9 @@ void xhh_Task_Flash_Update_Flash_Data(xhh_Task_Flash_user_data_t *data)
 	data->time = 0;   // 瞬态不存,按需改
 }
 
-// ===== 四件套(Flash 模块自己的) =====
-void xhh_Task_Flash_Init(void)
-{
-	xhh_Task_Flash_Get_User_Data(&g_xhh_user_data);
-	xhh_Task_Flash_Update_User_Data(&g_xhh_user_data);
-}
-
-void xhh_Task_Flash_DeInit(void)
-{
-}
-
+// ===== 统一业务使能接口 =====
 void xhh_Task_Flash_Cmd(uint8_t cmd)
 {
-	(void)cmd;   // Flash 模块通常常开,cmd 按需用
-}
-
-void xhh_Task_Flash_Loop(void)
-{
-	// Flash 模块通常无周期任务;关机时由状态机调 Save
+	/* AI:占位接口：当前 Flash 模块常开，不响应使能命令；后续需要运行态开关时再实现。 */
+	(void)cmd;
 }

@@ -1,128 +1,124 @@
 # Task 模块模式
 
-> 每个功能域 = 一个 `xhh_Task_<X>.c/.h` 模块。四件套接口必须完整暴露,内部实现可空。BSP 用 static 封装隔离硬件,平台无关。
+> 每个功能域对应一个 `xhh_Task_<X>.c/.h`。Task 只维护业务状态、处理命令和执行周期逻辑；全部硬件初始化由对应 `xhh_BSP_*_Init` 完成。
 
 ---
 
-## 四件套接口(必须完整)
+## Task 接口边界
 
-每个 Task 模块的头文件必须暴露:
+Task 不提供 `_Init` / `_DeInit`。业务控制和周期处理按以下规则组织：
 
-| 函数 | 签名 | 职责 |
-|------|------|------|
-| `_Init` | `void xhh_Task_<X>_Init(void)` | 硬件/GPIO/定时器配置,注册资源 |
-| `_DeInit` | `void xhh_Task_<X>_DeInit(void)` | 反初始化,释放资源 |
-| `_Cmd` | `void xhh_Task_<X>_Cmd(uint8_t cmd)` | 使能控制,cmd=0 关 / 1 开 |
-| `_Loop` | `void xhh_Task_<X>_Loop(void)` | 主循环周期调用,跑模块逻辑 |
-
-四件套是底线,必须齐全。**接口内部可以是空实现**(如配置类模块的 `_Loop` 空体 + 守卫即可),但接口必须保留,保证聚合层 `xhh_Task_ALL` 转发时形态一致。
-
-部分模块按需扩展 `_Set_*` / `_Get_*` / `_Apply_*`,但不能替代四件套。
-
-示例:
+- 每个纳入 Task 聚合层的模块提供 `xhh_Task_<X>_Cmd(uint8_t cmd)`，用于统一业务使能控制。
+- 需要周期处理时提供 `xhh_Task_<X>_Loop(void)`，并在 Doxygen 中声明调用周期。
+- 按真实业务需要提供 `_Set_*`、`_Get_*`、`_Apply_*`、`_IS_*`。
+- 为统一 Cmd 调度允许保留明确占位的 `_Cmd`；函数体必须使用 `AI:` 注释说明原因、当前无动作行为和启用条件。
 
 ```c
-// xhh_Module/xhh_Task/xhh_Task_HoldPP.h
-void xhh_Task_HoldPP_Init(void);
-void xhh_Task_HoldPP_DeInit(void);
 void xhh_Task_HoldPP_Cmd(uint8_t cmd);
+
+/**
+ * @brief AI:执行保持供电周期处理。
+ * @note AI:由 APP 每 100ms 调用一次。
+ */
 void xhh_Task_HoldPP_Loop(void);
+```
+
+---
+
+## 状态初始化与复位
+
+- Task 初始状态直接使用 `.c` 内 `static` 变量初始化器表达。
+- 模块重新使能、关闭时需要复位的计数器和业务状态，在 `_Cmd` 中明确处理。
+- Task 不配置、启动或反初始化 GPIO、PWM、ADC、SPI、Timer 等硬件。
+- 硬件初始化统一由 APP 调用对应 `xhh_BSP_*_Init` 完成。
+
+```c
+static volatile uint8_t xhh_task_motor_en = 0;
+static uint16_t motor_delay_count = 0;
+
+void xhh_Task_Motor_Cmd(uint8_t cmd)
+{
+	xhh_task_motor_en = cmd;
+	motor_delay_count = 0;
+	if (cmd == 0U)
+	{
+		xhh_BSP_GPIO_Write(xhh_BSP_GPIO_MOTOR_ENABLE, 0U);
+	}
+}
 ```
 
 ---
 
 ## 内部状态封装
 
-- 模块状态用 `static` 变量封装在 `.c` 内,不暴露到头文件
-- 使能位:`static volatile uint8_t xhh_task_<x>_en = 0;`
-  - `volatile`:可能被中断或事件层修改
-  - `static`:限制在文件内
-
-```c
-static volatile uint8_t xhh_task_motor_en = 0;
-
-static uint8_t key_OK_step = 0;
-static uint16_t key_OK_interval = 0;
-```
+- 模块状态放在 `.c` 内私有 `static` context 或 `static` 变量中。
+- 禁止公开可写全局变量；确需跨模块共享时提供明确的 Get/Set 接口。
+- 中断和主循环共享的状态才使用 `volatile`，不能把 `volatile` 当作并发保护。
 
 ---
 
-## Loop 首句守卫(必须)
+## 周期接口守卫
 
-`_Loop` 函数第一句必须检查使能位,未使能直接返回:
+受 `_Cmd` 控制的周期接口，入口必须检查使能状态；未使能时立即返回且不操作硬件：
 
 ```c
-void xhh_Task_HoldPP_Loop(void) {
-    if (xhh_task_holdpp_en == 0) return;
-    ...
+void xhh_Task_Motor_Loop(void)
+{
+	if (xhh_task_motor_en == 0U)
+	{
+		return;
+	}
+
+	/* AI:执行本周期业务逻辑。 */
 }
 ```
 
-即使 Loop 体内是空的,守卫也必须保留。
+周期由 APP 调度入口明确安排。接口名沿用 `_Loop` 时，头文件 Doxygen 必须写明 1ms、10ms、100ms 等实际调用周期。
 
 ---
 
-## 硬件访问(通过 BSP 公共层)
+## 硬件访问
 
-Task 不直接碰厂商 API/寄存器/引脚号,统一调 `xhh_BSP_*` 公开接口,见 [bsp.md](./bsp.md)。
+Task 只能调用 `xhh_BSP_*` 公开接口，不出现厂商 API、寄存器、端口、真实引脚号或硬件初始化参数：
 
 ```c
-// Task 内只调 BSP 公开接口,不出现 GPIOB_ModeCfg/HAL_GPIO_PinConfig 等
-xhh_BSP_GPIO_Write(xhh_BSP_GPIO_ID_MOTOR_EN, 1);
-xhh_BSP_PWM_Set(xhh_BSP_PWM_ID_MOTOR_LEVEL, LevelToDuty(level));
-xhh_BSP_Flash_Read(xhh_BSP_FLASH_ID_MOTOR_CONFIG, 0, &cfg, sizeof(cfg));
+xhh_BSP_GPIO_Write(xhh_BSP_GPIO_MOTOR_ENABLE, enable);
+xhh_BSP_PWM1_Set_Duty(LevelToDutyCount(level));
 ```
 
-业务参数→硬件值的换算(如 level 0~100 → duty)放 Task 内 `static` 函数,不进 BSP。
-
-`#include` 只 include `xhh_BSP_*.h` 公共头,不 include 厂商 SDK 头(`CH59x_gpio.h`/`py32f0xx_hal.h` 等)。
+- GPIO 使用 BSP 公开的稳定逻辑信号名；端口、引脚和有效极性只在 `xhh_BSP_GPIO.c`。
+- ADC 使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名；厂家通道值只在 `xhh_BSP_ADC.c`。
+- 业务参数到硬件计数值的换算仍放在 Task 私有函数中。
+- Task 不提供 `Config` 接口接收硬件资源，也不保存板级端口和引脚配置。
 
 ---
 
 ## 聚合层 xhh_Task_ALL
 
-- `xhh_Task_ALL.h` 聚合 include 所有 Task 头,并声明 `xhh_Task_ALL_Init/Cmd/DeInit`
-- `xhh_Task.c` 实现里逐个转发调用每个模块的 Init/Cmd/DeInit
-- 主循环和状态机通过聚合接口统一开关模块,不直接逐个调
+`xhh_Task_ALL.h` 只聚合 Task 头文件和当前真实需要的统一业务操作。现阶段统一使能接口为：
 
 ```c
-#include "xhh_Task_ADC.h"
-// ... 各 Task 头
 void xhh_Task_ALL_Cmd(uint8_t en);
-void xhh_Task_ALL_Init(void);
-void xhh_Task_ALL_DeInit(void);
 ```
 
-新增 Task 模块时:先建 `xhh_Task_<X>.c/.h`(四件套齐全),再在 `xhh_Task_ALL.h` 加 include,在 `xhh_Task.c` 的 Init/Cmd/DeInit 里转发。
+`xhh_Task.c` 只转发各模块 `_Cmd`。不提供 `xhh_Task_ALL_Init` 或 `xhh_Task_ALL_DeInit`；硬件初始化由 APP 直接调用各 BSP Init。
 
----
+新增 Task 时：
 
-## 调度
-
-- 主循环按周期调各模块 `_Loop`(周期机制 TMOS/tick flag 由平台定,见 [interrupt.md](./interrupt.md))
-- 状态机层按需用 `_Cmd(1)/_Cmd(0)` 开关模块
-
-```c
-// 主循环 10ms 周期(平台无关的调用顺序)
-xhh_Event_Handle();
-xhh_SYS_Handle();
-xhh_Task_HoldPP_Loop();
-Key_Handle(xhh_Task_Key_Scanf());
-xhh_Task_Motor_Loop();
-xhh_Task_UI_Loop();
-
-// 状态机内按需开关
-xhh_Task_Key_Cmd(1);
-xhh_Task_ADC_Cmd(1);
-```
+1. 新建 `xhh_Task_<X>.c/.h`。
+2. 声明统一 Cmd，并按真实需要增加 Loop、Get/Set 等接口。
+3. 在 `xhh_Task_ALL.h` 增加头文件聚合。
+4. 模块需要统一使能时，才在 `xhh_Task_ALL_Cmd` 增加转发。
 
 ---
 
 ## 禁止
 
-- 把模块状态暴露成非 static 全局(除使能位确需跨文件时用 `g_` 前缀)
-- 在 `_Loop` 里漏掉使能位守卫
-- 四件套缺接口(即使实现为空,接口也必须暴露)
-- 新建功能时不建 Task 模块,直接在 main 里堆逻辑
-- Task 内直接调厂商 API 或 include 厂商 SDK 头(必须经 `xhh_BSP_*`)
-- 新增设备型 BSP(`xhh_BSP_Key`/`xhh_BSP_Motor` 这类)或 `xhh_Port_*` 转发层
+- Task 声明或实现 `_Init`、`_DeInit`。
+- Task 提供 GPIO/PWM/ADC 等硬件 `Config` 接口。
+- Task 保存真实端口、引脚、厂家通道或硬件初始化参数。
+- 在周期接口中遗漏使能守卫。
+- Task 直接调用厂家 API、寄存器或 include 厂家 SDK 头。
+- 为接口形式统一增加 Task `_Init/_DeInit` 空函数。
+- 占位 Cmd 没有在函数体内用 `AI:` 注释说明原因、当前行为和启用条件。
+- 新增设备型 BSP 或 `xhh_Port_*` 转发层。

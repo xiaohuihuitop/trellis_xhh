@@ -40,11 +40,12 @@ BLE 收数      ─┐
 
 ### 场景 B：新增一个硬件功能（如加一个传感器）
 
-1. **Task 层**：建 `xhh_Task_<Sensor>.c/.h`，四件套 + BSP static 封装
-2. **聚合层**：注册到 `xhh_Task_ALL.h` / `xhh_Task.c`
-3. **状态机层**：在合适状态的 Entry 里 `_Cmd(1)` 开启，PowerOFF 里 `_Cmd(0)` 关闭
-4. **事件层**：若该传感器需要触发系统行为（如超阈值报警），在 Task Loop 内检测后 `xhh_Event_Trigger`
-5. **持久化**：若需记忆配置，加进 `xhh_Task_Flash_user_data_t` 结构体
+1. **BSP 层**：在对应 `xhh_BSP_<能力>_Init` 中完成固定硬件资源初始化，并提供逻辑操作接口
+2. **Task 层**：建 `xhh_Task_<Sensor>.c/.h`，只提供 Cmd、Loop、Get/Set 等业务接口，不提供 Init/DeInit 或硬件 Config
+3. **聚合层**：注册到 `xhh_Task_ALL.h`；需要统一使能时在 `xhh_Task.c` 增加 Cmd 转发
+4. **状态机层**：在合适状态的 Entry 里 `_Cmd(1)` 开启，PowerOFF 里 `_Cmd(0)` 关闭
+5. **事件层**：若该传感器需要触发系统行为（如超阈值报警），在 Task Loop 内检测后 `xhh_Event_Trigger`
+6. **持久化**：若需记忆配置，加进 `xhh_Task_Flash_user_data_t` 结构体
 
 ### 场景 C：改一个已有行为（如调整某状态的持续时间）
 
@@ -54,8 +55,15 @@ BLE 收数      ─┐
 
 ### 场景 D：纯算法/计算（如时间换算、CRC）
 
-1. 不属于任何业务层，放 `APP/` 下独立辅助文件（如 `utc_time/`）
+1. 无产品语义且无 MCU 依赖的通用能力，放 `Components/`（如 `utc_time/`）
 2. 不走事件/状态机，被需要的模块直接调
+
+### 场景 E：可跨项目复用的外部器件驱动（如 LCD、传感器）
+
+1. **Components 层**：器件协议、寄存器序列、编解码和渲染等通用逻辑放 `Components/<器件>/`
+2. **xhh_BSP 层**：GPIO、SPI、I2C、Delay 等基础硬件能力放根目录 `xhh_BSP/`
+3. Components 允许 include `xhh_BSP_*.h`，但禁止 include `main.h`、`APP/`、`xhh_Module/`、`Platform/` 或厂商 SDK 头
+4. 产品显示流程、页面状态和业务数据仍放 `xhh_Task_UI`，不进入通用器件组件
 
 ---
 
@@ -72,10 +80,12 @@ BLE 收数      ─┐
 │
 ├─ 操作单一硬件/单一业务域？ ──────> Task 层（对应模块）
 │
+├─ 可跨项目复用的外部器件驱动？ ───> Components（只通过 xhh_BSP 访问硬件）
+│
 ├─ 中断里必须立刻做的事？ ──────────> 中断（只清标志/计数/极轻量输出）
 │   └─ 见 isr-vs-main-loop.md
 │
-└─ 纯计算/无副作用？ ───────────────> APP/ 辅助文件
+└─ 纯计算/无副作用且可跨项目复用？ ─> Components/
 ```
 
 ---
@@ -86,7 +96,7 @@ BLE 收数      ─┐
 |------|------|----------|
 | 协议层直接改状态机 | 联动模块没同步更新 | 走事件层 |
 | 事件 case 内只改了一半模块 | 状态分叉 | case 内全改或全不改 |
-| 新硬件功能不建 Task 模块 | main_task 堆满逻辑 | 建四件套模块 + 注册 ALL |
+| 新硬件功能不建 Task 模块 | main_task 堆满逻辑 | BSP 初始化硬件 + 建无 Init/DeInit 的 Task + 注册 ALL |
 | Task 模块间直接互调 | 耦合、难调度 | 通过事件或状态机协调 |
 | 中断里做协议解析 | 时序崩、丢数据 | 中断只置标志，主循环处理 |
 

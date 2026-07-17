@@ -1,4 +1,4 @@
-# .clang-format — WCH MCU 固件项目
+# AI:XHH MCU 固件项目格式配置
 #
 # 部署位置：项目根目录（不是 .trellis/spec/ 下）
 # 作用：强制统一 Tab 缩进、大括号风格、case 顶格等格式约定

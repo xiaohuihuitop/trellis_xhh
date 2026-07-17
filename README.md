@@ -24,7 +24,7 @@
 
 本模板不是空模板，而是从真实项目代码里提取的开发者工程习惯：
 
-- **分层架构**：协议入口 → 事件 → 状态机 → Task 模块 → BSP；厂商层不改只调 config.h
+- **分层架构**：固定 `APP/xhh_Module/xhh_BSP/Platform/Components` 五个源码目录和 `Project/Doc` 两个辅助目录；协议入口 → 事件 → 状态机 → Task/Components → xhh_BSP → 当前唯一 Platform
 - **命名**：`xhh_` 前缀 + snake_case + 缩写词全大写 + `_t` 后缀 + `__XHH_<MODULE>_H__` 头文件保护
 - **Task 模块四件套**：`_Init/_DeInit/_Cmd(uint8_t)/_Loop` + static volatile 使能位 + Loop 守卫 + ALL 聚合
 - **状态机**：枚举状态 + 子步(Entry/Ing/Done) + Loop_Count + 单 switch + 集中 Change
