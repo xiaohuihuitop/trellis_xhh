@@ -72,6 +72,7 @@
 - [ ] **涉及 ADC**：上层只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
 - [ ] **涉及 Components 硬件访问**：Components 只调用 `xhh_BSP_*`，不包含 `main.h`、产品层或厂家头——见 [directory-structure.md](./directory-structure.md)
 - [ ] **涉及延时**：统一调用 `xhh_BSP_Delay_ms`；厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的平台适配实现中——见 [bsp.md](./bsp.md)
+- [ ] **涉及关机、Sleep、Shutdown 或显示外设**：确认显示控制器、背光和通信接口均按数据手册完整关断；`Display Off` 不等于 `Sleep In`——见 [bsp.md](./bsp.md)
 - [ ] **存在占位函数**：确认占位是为了框架统一，函数体内有 `AI:` 注释说明原因、当前行为和启用条件，且未返回默认成功或伪造硬件值——见 [error-handling.md](./error-handling.md)
 - [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
 - [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
@@ -95,6 +96,7 @@
 - [ ] **路径审查**：涉及协议/状态机/持久化的改动，确认完整读写链路而非只看单函数
 - [ ] **TODO 注释**：遗留 TODO 用 `//TODO` 行首格式，便于 grep
 - [ ] **调试残留**：没有遗留的 `XHH_DEBUG` 高频日志、测试 hook、编译开关忘关
+- [ ] **低功耗实测**：涉及低功耗或显示外设时，已对比冷上电自动休眠与开机后关机的稳定电流；已验证唤醒后显示恢复——见 [quality.md](./quality.md)
 
 ---
 
