@@ -3,7 +3,7 @@
 // xhh_Event_Template.h → 事件头
 // xhh_Task_ALL.h → 聚合头(见 xhh_Task_All_Template)
 // g_xhh_user_data → Flash 模块全局(见 xhh_Task_Flash_Template)
-// XHH_DEBUG → 日志宏(见 logging.md,在 main.h 定义)
+// XHH_DEBUG → 日志宏(见 logging.md,在 xhh_BSP_Def.h 定义)
 
 #include "xhh_Mode.h"
 #include "xhh_Event_Template.h"

@@ -1,30 +1,29 @@
 // ===== 项目占位（复制后必须替换/确认已定义）=====
 // xhh_Mode.h → 状态机头(声明 xhh_SYS_Change,见 xhh_Mode_Template)
 // xhh_Task_UI_Set_ERR/xhh_Task_BAT_Cmd/xhh_Task_Key_Cmd/xhh_Task_Motor_Cmd → 各 Task 模块接口
-// XHH_DEBUG → 日志宏(见 logging.md,在 main.h 定义)
+// XHH_DEBUG → 日志宏(见 logging.md,在 xhh_BSP_Def.h 定义)
 
 #include "xhh_Event_Template.h"
 #include "xhh_Mode.h"
 
-// ===== 全局单槽(事件值 + 参数) =====
-xhh_Event_t Event_n = xhh_Event_Null;
-uint32_t xhh_Event_Parameter_n = xhh_Event_Parameter_ID_NULL;
+// ===== Event 私有单槽(事件值 + 参数) =====
+static xhh_Event_t xhh_event_slot = xhh_Event_Null;
+static uint32_t xhh_event_parameter_slot = xhh_Event_Parameter_ID_NULL;
 
-// ===== 触发:写全局量 =====
+// ===== 触发:写私有单槽 =====
 void xhh_Event_Trigger(xhh_Event_t event, uint32_t xhh_Event_Parameter)
 {
-	Event_n = event;
-	xhh_Event_Parameter_n = xhh_Event_Parameter;
+	xhh_event_slot = event;
+	xhh_event_parameter_slot = xhh_Event_Parameter;
 	XHH_DEBUG("e_t:%d\r\n", event);
 }
 
 // ===== 分发:读后清零 + switch(主循环 10ms 调) =====
 void xhh_Event_Handle(void)
 {
-	xhh_Event_t event_temp = Event_n;
-	Event_n = xhh_Event_Null;                 // 取出即清零
-	uint32_t param = xhh_Event_Parameter_n;   // 先存参数(见 event-system.md),再清零
-	xhh_Event_Parameter_n = xhh_Event_Parameter_ID_NULL;
+	xhh_Event_t event_temp = xhh_event_slot;
+	uint32_t param = xhh_event_parameter_slot;
+	xhh_event_slot = xhh_Event_Null;          // 取出即清空，新事件留给下一轮 Handle
 
 	if (event_temp == xhh_Event_Null)
 		return;

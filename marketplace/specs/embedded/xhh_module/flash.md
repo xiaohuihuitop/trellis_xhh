@@ -10,10 +10,9 @@
 
 | 函数 | 职责 |
 |------|------|
-| `xhh_BSP_Flash_Erase(id)` | 擦除一页 |
-| `xhh_BSP_Flash_Read(id, off, buf, len)` | 读 |
-| `xhh_BSP_Flash_Write(id, off, buf, len)` | 擦+写 |
-| `xhh_BSP_Flash_Write_Any(...)` | 跨页写(按需) |
+| `xhh_BSP_Flash_Erase(address)` | 擦除绝对地址所在的一个硬件擦除单元 |
+| `xhh_BSP_Flash_Read(address, data, length)` | 读原始字节 |
+| `xhh_BSP_Flash_Write(address, data, length)` | 写原始字节，不自动擦除 |
 
 `xhh_Task_Flash` 只调这层签名,不直接碰厂商 API(`EEPROM_*`/`HAL_FLASH_Program` 等)。具体实现依 MCU,见 [bsp.md](./bsp.md)。
 
@@ -29,7 +28,8 @@
 
 ```c
 // xhh_Module/xhh_Task/xhh_Task_Flash.h
-// 地址宏在 xhh_BSP_Flash.c 内(APP_FLASH_USER_DATA_ADDR),业务层用逻辑 ID xhh_BSP_FLASH_ID_USER_DATA
+// 当前项目 Flash 数据绝对地址。切换 MCU 时按新的 Flash 布局手工调整。
+#define XHH_TASK_FLASH_USER_DATA_ADDRESS 0x0800FF00UL
 
 typedef struct {
     uint16_t time;
@@ -62,7 +62,7 @@ xhh_Task_Flash_user_data_t g_xhh_user_data;   // 跨文件全局唯一
 
 ```c
 void xhh_Task_Flash_Get_User_Data(xhh_Task_Flash_user_data_t *data) {
-    xhh_BSP_Flash_Read(xhh_BSP_FLASH_ID_USER_DATA, 0, (uint8_t *)data, sizeof(*data));
+    xhh_BSP_Flash_Read(XHH_TASK_FLASH_USER_DATA_ADDRESS, (uint8_t *)data, sizeof(*data));
     if (xhh_Task_Flash_User_Data_IS_Valid(data) == 0) {
         xhh_Task_Flash_User_Data_Clean(data);          // 清默认值
         xhh_Task_Flash_Save_User_Data(data);           // 写回
@@ -94,10 +94,10 @@ xhh_Task_Flash_Save_User_Data(&g_xhh_user_data);
 ## 持久化边界
 
 - 持久化集中在 `xhh_Task_Flash.*`,其他模块(Motor/BAT/Timeout)不直接调 `xhh_BSP_Flash_Write`
-- `xhh_Task_Flash` 模块**只做整体管理**:`Get` / `Set` / `Clean` / `IS_Valid` / `Init` / `DeInit` / `Cmd`
+- `xhh_Task_Flash` 模块**只做整体管理**:`Get` / `Set` / `Clean` / `IS_Valid` / `Update` / `Cmd`，不提供 `Init` 或 `DeInit`
 - **禁止在 Flash 模块内放单字段 Save 接口**(如 `Save_Temp_Max` / `Save_BAT` / `Save_Level`)——这些由业务模块在自己的 .c 里实现
 - 单字段 Save 接口(业务模块内)**只更新 RAM**(`g_xhh_user_data.xxx = value`),**不立即写 Flash**;整体写 Flash 由关机流程集中调用
-- 需要立即持久化的场景(如设置即生效):调用方直接 `g_xhh_user_data.xxx = value; xhh_Task_Flash_User_Data_Set_Flash(&g_xhh_user_data);`
+- 需要立即持久化的场景(如设置即生效):调用方更新运行副本后调用 `xhh_Task_Flash_Save_User_Data(&g_xhh_user_data);`
 - 读取直接用 `g_xhh_user_data.xxx`,不用函数接口
 - OTA 标志单独存固定地址,不进用户数据结构体
 

@@ -47,14 +47,14 @@ APP -> xhh_Module -> Components
 ```text
 APP/
 ├── main.c                       # 芯片启动后的应用入口
-├── main_task.c/.h               # 主循环、TMOS 或其他调度接入
+├── main_task.c/.h               # 按需：将 TMOS 或复杂调度从 main.c 拆出
 ├── BLE_SLAVE.c/.h               # 产品使用 BLE 时按需存在
 ├── BLE_HANDLE.c/.h              # 产品协议入口
 ├── config/                      # 产品功能开关
 └── assets/                      # UI 图片、字体等产品资源
 ```
 
-- `main.c` 和 `main_task.c` 只负责依次调用各 BSP Init、接入调度并调用稳定业务入口；不建立 APP 硬件 Config 聚合层。
+- `main.c` 是固定入口，负责 BSP 初始化、Event/Task 初始触发与主循环调度。调度复杂时，可按需使用 `main_task.c/.h` 拆分调度代码；不建立 APP 硬件 Config 聚合层。
 - 多模块业务联动必须进入 `xhh_Event`，不得长期堆在 `main.c` 或协议回调中。
 - 厂商调度机制只留在 APP 入口适配处，不扩散到 Event/Mode/Task。
 
@@ -74,6 +74,30 @@ xhh_Module/
 - `xhh_Task` 负责 Motor、BAT、Key、UI 等产品功能域。
 - 业务层禁止 include `main.h`、厂商 SDK 头、芯片寄存器定义和具体引脚号。
 - `xhh_Task_*` 通过根目录 `xhh_BSP/` 的公开接口访问硬件，不提供硬件 Config、Init 或 DeInit。
+
+---
+
+## 项目根 README：硬件事实清单
+
+项目根 `README.md` 必须维护当前项目的硬件事实，供开发前确认、开发中更新和提交前核对。README 记录的是项目硬件摘要，不替代原理图、PCB 或 BSP 实现。
+
+至少包含以下内容：
+
+- MCU 型号、封装、Flash/RAM 容量，以及 `Project/` 中实际编译 Target
+- 板卡名称、硬件版本、原理图或 PCB 资料路径及版本
+- 当前系统时钟、电源条件和已启用的基础外设能力
+- 已接入的产品外设及其逻辑名称，例如 LCD、按键、电机、ADC 采样、充电检测
+- 影响开发和烧录的硬件限制，例如 SWD 复用、BOOT、唤醒脚、保留 Flash 区域、外设引脚冲突
+
+物理硬件信息的核对优先级固定如下：
+
+```text
+实物板与原理图/PCB -> Project Target 与 Platform 启动配置 -> xhh_BSP 实现 -> README 摘要
+```
+
+- README 与任一更高优先级来源冲突时，必须停止相关改动并核对；不得根据猜测选择其中一个值。
+- MCU、板卡版本、引脚、ADC 映射、外设实例、Timer/DMA、时钟、Flash 分区、调试/唤醒约束发生变化时，必须在同一开发任务中同步更新 README 和对应 `xhh_BSP`/Project 配置。
+- README 可以列出用于核对的物理映射；运行时唯一实现仍在 `xhh_BSP_*.c`，业务层不得从 README 复制真实端口、引脚或厂家通道值到代码。
 
 ---
 

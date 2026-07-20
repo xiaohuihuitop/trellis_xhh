@@ -13,6 +13,7 @@
 | [Flash 数据布局思考指南](./flash-data-layout.md) | 持久化结构体怎么设计、校验怎么做 | 新增/修改持久化字段时 |
 | [代码复用思考指南](./code-reuse-thinking-guide.md) | 判断是否应该复用/扩展现有模块 | 改常量、加 helper、批量改时 |
 | [跨层链路思考指南](./cross-layer-thinking-guide.md) | 检查协议/事件/状态机/Task 边界 | 一次改动影响 3 层以上时 |
+| [MCU 开发检查清单](./mcu-development-checklist.md) | 按严重度检查逻辑、硬件事实和工程风险 | MCU 源码修改完成后 |
 
 ---
 
@@ -23,6 +24,7 @@
 - **加/改持久化字段** → 先读 [Flash 数据布局思考指南](./flash-data-layout.md)
 - **改常量/枚举/协议字段** → 先 grep 全局引用，再读 [代码复用思考指南](./code-reuse-thinking-guide.md)
 - **改动跨 3 层** → 先画链路，再读 [跨层链路思考指南](./cross-layer-thinking-guide.md)
+- **MCU 源码修改完成** → 按 [MCU 开发检查清单](./mcu-development-checklist.md) 输出问题、证据与覆盖范围
 
 ---
 
@@ -39,6 +41,7 @@
 - [ ] **加/改持久化字段**：先读 [Flash 数据布局思考指南](./flash-data-layout.md)，确认结构体布局、校验、默认值、读写时机
 - [ ] **改常量/枚举/协议字段**：先 `grep -r "值"` 全局搜索所有引用，再读 [代码复用思考指南](./code-reuse-thinking-guide.md)
 - [ ] **改动跨 3 层以上**：先画链路图，再读 [跨层链路思考指南](./cross-layer-thinking-guide.md)
+- [ ] **涉及电池等级、协议参数、Flash、周期或硬件配置**：在修改前明确本次需要追踪的实值链路和 README 事实来源
 
 ## Quality Check（完成后反思）
 
@@ -49,4 +52,5 @@
 - [ ] **无状态分叉**：事件 case 内多模块设置一次性完成，没有改一半就 break
 - [ ] **中断/主循环分工正确**：时敏的放中断，重的放主循环，共享数据有 volatile
 - [ ] **持久化闭环**：新字段有校验、默认值、Flash→运行时和运行时→Flash 双向同步
+- [ ] **检查有证据**：按 [MCU 开发检查清单](./mcu-development-checklist.md) 输出按严重度排序的问题；无问题时仍列出检查路径和覆盖范围
 - [ ] **踩坑记录**：这次有没有发现新的"下次该想到"的点？有的话补进对应 guide

@@ -24,7 +24,7 @@
 | [命名约定](./naming-conventions.md) | xhh_ 前缀、缩写词全大写、_t 后缀、头文件保护宏 |
 | [Task 模块模式](./task-module.md) | 按需 Cmd/Loop、使能位守卫、ALL Cmd 聚合、调 `xhh_BSP_*` |
 | [状态机模式](./state-machine.md) | 枚举+子步+计数+switch、集中转换 |
-| [事件系统](./event-system.md) | 全局变量单槽、参数编码、Trigger/Handle |
+| [事件系统](./event-system.md) | Event 私有单槽、参数编码、Trigger/Handle |
 | [中断与关键码](./interrupt.md) | 跨平台原则、时敏输出/安全关断例外 |
 | [BSP 公共层](./bsp.md) | BSP 简洁原则、SYS 集中初始化、Timer/PWM/IWDG/SPI/ADC 接口和平台隔离 |
 
@@ -35,7 +35,7 @@
 | [目录结构](./directory-structure.md) | 五个源码目录、Project/Doc 辅助目录、单 MCU 平台和依赖方向 |
 | [Flash 持久化](./flash.md) | 结构体直存、校验、默认值、集中模块 |
 | [异常与边界处理](./error-handling.md) | guard early、返回码、状态切换、无 assert |
-| [日志规范](./logging.md) | XHH_DEBUG 宏、编译期开关 |
+| [日志规范](./logging.md) | XHH_PRINTF / XHH_DEBUG 宏、XHH_DEBUG_EN 编译期开关 |
 
 ### 工程规范
 
@@ -69,6 +69,7 @@
 - [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
 - [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
 - [ ] **涉及硬件操作**：Task 不直接调厂商 API/引脚号/寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
+- [ ] **涉及硬件事实**：先阅读项目根 `README.md` 的 MCU、板卡、硬件资料和限制；硬件信息与原理图、Project 或 BSP 冲突时先核对，不按猜测修改——见 [directory-structure.md](./directory-structure.md)
 - [ ] **涉及 ADC**：上层只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
 - [ ] **涉及 Components 硬件访问**：Components 只调用 `xhh_BSP_*`，不包含 `main.h`、产品层或厂家头——见 [directory-structure.md](./directory-structure.md)
 - [ ] **涉及延时**：统一调用 `xhh_BSP_Delay_ms`；厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的平台适配实现中——见 [bsp.md](./bsp.md)
@@ -85,7 +86,8 @@
 
 代码写完，提交前逐项确认：
 
-- [ ] **编译通过**：MounRiver Studio / RISC-V GCC 编译无错
+- [ ] **编译通过**：使用当前项目实际 IDE 或构建系统全量编译，无错无警告
+- [ ] **构建产物**：MCU 代码提交已包含本次全量编译生成的 `.hex` / `.bin`
 - [ ] **产物生成**：`.hex` / `.bin` 产出 + post-build CRC 通过
 - [ ] **格式**：Tab 缩进、缩写词全大写、无文件头注释、`.clang-format` 无报错——见 [quality.md](./quality.md) Review Checklist
 - [ ] **分层链路**：改动是否走了 协议→事件→状态机→Task 链路，有没有绕过事件层直接跨模块调

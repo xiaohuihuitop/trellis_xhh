@@ -17,10 +17,10 @@
 - **命名约定**：`xhh_` 前缀 + XHH 分层命名 + 缩写词全大写 + `_t` 后缀 + 头文件保护 `XHH_<MODULE>_H`
 - **Task 模块接口**：不提供 `_Init/_DeInit`；使用 `_Cmd(uint8_t)` 控制业务状态，周期模块使用 `_Loop` + static volatile 使能位 + 首句守卫
 - **状态机**：枚举状态 + 子步(Entry/Ing/Done) + Loop_Count + 单 switch + 集中 `xhh_SYS_Change`
-- **事件系统**：全局变量单槽 + 参数位编码 + Trigger/Handle + 无 RTOS 队列
+- **事件系统**：Event 私有单槽 + 参数位编码 + Trigger/Handle + 无 RTOS 队列
 - **Flash 持久化**：结构体直存 + 字段校验 + 无效清默认值 + 集中模块
 - **中断/关键码**：放 RAM 执行提速（段/属性依 MCU）+ 中断只做轻量 + 共享 volatile + TMOS 调度
-- **日志**：`XHH_DEBUG` 宏 + 编译期开关默认关
+- **日志**：`XHH_PRINTF` / `XHH_DEBUG` 宏 + `XHH_DEBUG_EN` 编译期开关默认关
 - **占位接口**：允许为框架统一保留，占位函数体内必须用 `AI:` 注释明确原因、当前行为和启用条件，不得伪造成功或硬件值
 
 ### 格式规约
@@ -60,6 +60,7 @@ embedded/
     ├── isr-vs-main-loop.md                # 中断 vs 主循环
     ├── flash-data-layout.md               # Flash 数据布局
     ├── code-reuse-thinking-guide.md       # 代码复用
+    ├── mcu-development-checklist.md       # MCU 开发检查清单
     └── cross-layer-thinking-guide.md      # 跨层链路
 ```
 
@@ -92,9 +93,13 @@ trellis init --registry <仓库地址> --template embedded
    ```
    不做这一步：`embedded/examples/` 会被 Trellis 当成第三层 spec layer 扫描，`Spec layers` 列表会多出 `examples`，污染识别；实测移走后 `Spec layers: xhh_module, guides`（各层都还含 README/index 与若干 .md，识别正常）。
 
-3. 把 `xhh_module/` 与 `guides/` 里"项目事实占位"换成真实值（地址、结构体名、事件清单等）。
+3. 在项目根 `README.md` 建立或更新硬件事实清单：MCU、板卡版本、硬件资料路径、已启用 BSP 能力和硬件限制；与原理图、Project 和 BSP 实现核对后再开始开发。
 
-4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换。
+4. 把 `xhh_module/` 与 `guides/` 里"项目事实占位"换成真实值（地址、结构体名、事件清单等）。
+
+5. 确认 `D:\workspace\xhh_项目参考` 中可用的参考项目，并按 `guides/code-reuse-thinking-guide.md` 的规则登记复用来源；该目录可以包含多个独立项目，且只作为复制和检索来源。
+
+6. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换。
 
 ## 维护约定
 

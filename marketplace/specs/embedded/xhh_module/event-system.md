@@ -8,10 +8,10 @@
 
 | 组成 | 形式 |
 |------|------|
-| 事件值 | 全局变量 `xhh_Event_t Event_n` |
-| 事件参数 | 全局变量 `uint32_t xhh_Event_Parameter_n` |
-| 触发 | `xhh_Event_Trigger(event, parameter)` 写入两个全局量 |
-| 分发 | `xhh_Event_Handle()` 读后清零 + 提取参数 + switch |
+| 事件值 | Event 文件私有 `static xhh_event_slot` |
+| 事件参数 | Event 文件私有 `static xhh_event_parameter_slot` |
+| 触发 | `xhh_Event_Trigger(event, parameter)` 写入单槽 |
+| 分发 | `xhh_Event_Handle()` 复制事件和参数快照、清空事件槽后进入 `switch` |
 
 单槽设计:同一时刻只持有一个事件。新事件会覆盖未处理的旧事件。这是有意的(嵌入式场景事件密度低),不要改成队列。
 
@@ -41,14 +41,13 @@
 ```c
 void xhh_Event_Handle(void)
 {
-    xhh_Event_t event_temp = Event_n;
-    Event_n = xhh_Event_Null;                    // 取出即清零
-    xhh_Event_Parameter_t param = xhh_Event_Parameter_n;
-    xhh_Event_Parameter_n = xhh_Event_Parameter_ID_NULL;
+    xhh_Event_t event_temp = xhh_event_slot;
+    uint32_t param = xhh_event_parameter_slot;
+    xhh_event_slot = xhh_Event_Null;             // 取出即清空，后续新事件进入下一轮处理
 
     if (event_temp == xhh_Event_Null) return;
 
-    // 必须提前完整提取(即使本次用不到也要提)
+    // 当前事件需要拆分参数时，从局部快照提取。
     uint16_t data_16 = (uint16_t)(param & 0xffff);
     uint8_t  data_h  = (uint8_t)((data_16 >> 8) & 0xff);
     uint8_t  data_l  = (uint8_t)(data_16 & 0xff);
@@ -64,7 +63,7 @@ void xhh_Event_Handle(void)
 }
 ```
 
-> 即使调用方只传 `xhh_Event_Parameter_ID_NULL`,Handle 里也必须走完整的提取流程。这是规矩,不是按需优化。
+> 参数只存在于本次 Handle 的局部快照中。事件处理期间再触发的新事件会写入单槽，留给下一次 Handle 处理。
 
 ---
 
@@ -73,14 +72,14 @@ void xhh_Event_Handle(void)
 ```c
 void xhh_Event_Trigger(xhh_Event_t event, uint32_t xhh_Event_Parameter)
 {
-    Event_n = event;
-    xhh_Event_Parameter_n = xhh_Event_Parameter;
+    xhh_event_slot = event;
+    xhh_event_parameter_slot = xhh_Event_Parameter;
     XHH_DEBUG("e_t:%d\r\n", event);
 }
 ```
 
 关键点:
-- `Handle` 第一件事是**取出并清零** `Event_n`,避免重入
+- `Handle` 第一件事是**取出并清空** `xhh_event_slot`，避免重入
 - `Handle` 在主循环 10ms 周期调用
 - 事件 case 内直接调 `xhh_SYS_Change(...)` + 各 `xhh_Task_*_Set_*(...)` 完成多模块联动
 
@@ -133,7 +132,7 @@ if (xhh_IS_Can_KEY()) xhh_Event_Trigger(xhh_Event_PowerON, ...);
 
 ## 禁止
 
-- 引入 RTOS 消息队列 / 回调链替代全局变量轮询
+- 引入 RTOS 消息队列 / 回调链替代单槽轮询
 - 在协议层 / 按键层直接调 `xhh_SYS_Change` 或 `xhh_Task_*`(必须经事件)
 - 事件 case 内改了一半状态就 break(要么全改要么不改)
 - `Handle` 里不提取参数直接 switch(必须先提取 `data_16/data_h/data_l`)

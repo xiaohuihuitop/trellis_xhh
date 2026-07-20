@@ -71,7 +71,7 @@
 ## 必须遵守
 
 - 分层链路稳定：协议入口 → 事件 → 状态机 → Task 模块（见各 pattern 文件）
-- 模块状态放模块 static 变量或明确共享结构体，不用隐藏堆对象
+- 模块状态默认放在 `.c` 内私有 `static` 变量或 context；确需跨模块共享的数据对象必须明确归属，外部只允许按约定读取，不得直接写内部字段
 - 持久化数据应用前必须校验
 - 注释用中文
 - 新代码延续现有 `switch` 驱动风格
@@ -95,7 +95,7 @@
 
 固件验证不靠 lint/typecheck/unit-test，靠：
 
-- **编译通过**：MounRiver Studio / RISC-V GCC 编译无错
+- **编译通过**：使用当前项目实际 IDE 或构建系统全量编译，无错无警告
 - **产物生成**：`.hex` / `.bin` 产出 + post-build CRC 通过
 - **路径审查**：涉及协议/状态机/持久化时，看完整读写链路而非单函数
 - **硬件验证**（按需）：烧录 + 串口日志确认 + 协议行为确认
@@ -119,7 +119,7 @@
 
 - 新提交用**中文 Conventional Commits**：`feat:` / `fix:` / `chore:` / `docs:` 前缀 + 中文描述
 - 旧历史保留原风格，不追溯重写
-- 构建产物（hex/bin）是否随提交：按项目约定，在提交信息里说明是否刷新
+- MCU 代码提交必须包含本次全量编译生成的 `.hex` 与 `.bin` 产物，并在提交信息中说明验证方式
 
 ---
 
@@ -131,6 +131,8 @@
 - [ ] `Platform/Src` 是否只保留厂家 SDK、启动、系统、配置和厂家中断骨架，没有项目手写的 `MX_*`、外设 Handle、DMA 或外设初始化封装？
 - [ ] BSP 专属 IRQ 是否归对应 `xhh_BSP_*.c`，且厂家中断骨架没有反向 include `xhh_BSP`？
 - [ ] 当前未使用的外设是否已从工程移除，且没有为了目录完整新增空 BSP？
+- [ ] 项目根 `README.md` 是否列出当前 MCU、板卡版本、硬件资料路径、已启用基础外设和硬件限制？
+- [ ] 本次是否修改了 MCU、板卡、引脚、ADC 映射、外设实例、Timer/DMA、时钟、Flash 分区或调试/唤醒约束？若是，README、Project 和对应 `xhh_BSP_*.c` 是否已同步核对更新？
 - [ ] `xhh_Module/` 是否只依赖 `xhh_BSP/` 和 `Components/`，没有直接依赖 `Platform/`？
 - [ ] `Components/` 是否保持产品和 MCU 无关；如需硬件能力，是否只 include `xhh_BSP/` 公共头，没有 include `main.h`、`xhh_Module/` 或厂商头？
 - [ ] ADC 公开头是否只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，厂家硬件通道值是否只存在于 `xhh_BSP_ADC.c`？

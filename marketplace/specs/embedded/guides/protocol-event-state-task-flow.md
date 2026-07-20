@@ -11,7 +11,7 @@
 ─────────────────────────────────────────────────────────────────────────
 BLE 收数      ─┐
 按键检测       ─┼─> xhh_Event_Trigger ─> xhh_Event_Handle ─> xhh_SYS_Handle ─> xhh_Task_*_Loop
-硬件状态检测   ─┘    (写全局 Event_n)     (switch 分发)        (switch 状态机)    (各模块执行)
+硬件状态检测   ─┘    (写 Event 私有单槽)   (switch 分发)        (switch 状态机)    (各模块执行)
                                           ↓                      ↓
                                    xhh_SYS_Change        xhh_Task_*_Cmd/Set
 ```
@@ -96,7 +96,7 @@ BLE 收数      ─┐
 |------|------|----------|
 | 协议层直接改状态机 | 联动模块没同步更新 | 走事件层 |
 | 事件 case 内只改了一半模块 | 状态分叉 | case 内全改或全不改 |
-| 新硬件功能不建 Task 模块 | main_task 堆满逻辑 | BSP 初始化硬件 + 建无 Init/DeInit 的 Task + 注册 ALL |
+| 新硬件功能不建 Task 模块 | APP 主循环或 main_task 堆满逻辑 | BSP 初始化硬件 + 建无 Init/DeInit 的 Task + 注册 ALL |
 | Task 模块间直接互调 | 耦合、难调度 | 通过事件或状态机协调 |
 | 中断里做协议解析 | 时序崩、丢数据 | 中断只置标志，主循环处理 |
 
@@ -115,7 +115,7 @@ Task 层：xhh_Task_Motor_Loop 使能位开了吗？_Set_* 被调了吗？
   ↑
 事件层：xhh_Event_Handle 里对应 case 走了吗？前置守卫挡了吗？
   ↑
-协议/输入层：xhh_Event_Trigger 被调了吗？Event_n 值对吗？
+协议/输入层：xhh_Event_Trigger 被调了吗？传入的事件和值对吗？
 ```
 
 用 `XHH_DEBUG` 打印 `e_h`（事件号）和 `s_h`（状态切换）能快速定位卡在哪一层。

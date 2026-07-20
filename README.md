@@ -26,12 +26,12 @@
 
 - **分层架构**：固定 `APP/xhh_Module/xhh_BSP/Platform/Components` 五个源码目录和 `Project/Doc` 两个辅助目录；协议入口 → 事件 → 状态机 → Task/Components → xhh_BSP → 当前唯一 Platform
 - **命名**：`xhh_` 前缀 + snake_case + 缩写词全大写 + `_t` 后缀 + `__XHH_<MODULE>_H__` 头文件保护
-- **Task 模块四件套**：`_Init/_DeInit/_Cmd(uint8_t)/_Loop` + static volatile 使能位 + Loop 守卫 + ALL 聚合
+- **Task 模块接口**：禁止 `_Init/_DeInit`；按需提供 `_Cmd(uint8_t)`、`_Loop`、Get/Set，状态私有化、Loop 首句守卫并通过 ALL 聚合
 - **状态机**：枚举状态 + 子步(Entry/Ing/Done) + Loop_Count + 单 switch + 集中 Change
-- **事件系统**：全局变量单槽 + 参数位编码 + Trigger/Handle + 无 RTOS 队列
+- **事件系统**：Event 私有单槽 + 参数位编码 + Trigger/Handle + 无 RTOS 队列
 - **Flash**：结构体直存 + 字段校验 + 无效清默认值 + 集中模块
 - **中断/关键码**：放 RAM 执行提速 + 中断只做轻量 + 共享 volatile + TMOS 调度
-- **日志**：`XHH_DEBUG` 宏 + 编译期开关默认关
+- **日志**：`XHH_PRINTF` / `XHH_DEBUG` 宏 + `XHH_DEBUG_EN` 编译期开关默认关
 - **格式**：统一 Tab + 无文件头 + `.clang-format` 强制
 
 ## 仓库结构

@@ -29,7 +29,7 @@ typedef enum
 #define xhh_Event_Parameter_ID_Key   0x33330000
 
 // ===== 接口 =====
-/// @brief 触发事件(写全局单槽,新事件覆盖未处理的旧事件)
+/// @brief 触发事件(写 Event 私有单槽，新事件覆盖未处理的旧事件)
 /// @param event 事件枚举值
 /// @param xhh_Event_Parameter 参数(高16来源ID / 低16数据)
 void xhh_Event_Trigger(xhh_Event_t event, uint32_t xhh_Event_Parameter);

@@ -3,12 +3,14 @@
 // xhh_Mode_t / MODE_MIN / MODE_MAX / MODE_DEFAULT → Mode 模块(在 xhh_Mode.h 定义)
 // MOTOR_LEVEL_MIN / MOTOR_LEVEL_MAX / MOTOR_MODE_NORMAL / LEVEL_SAVE_1 / LEVEL_SAVE_2 → Motor 模块宏
 // TEMPLATE_VALUE_MIN / TEMPLATE_VALUE_MAX → Template 模块宏(在 xhh_Task_Template.h 定义,按需改名)
-// xhh_BSP_FLASH_ID_USER_DATA → 在 xhh_BSP_Flash.h 的 xhh_BSP_FLASH_ID_t 枚举里加(见 xhh_BSP_Template)
-// 地址宏在 xhh_BSP_Flash.c 内(APP_FLASH_USER_DATA_ADDR),业务层只用逻辑 ID,不直接碰地址
+// XHH_TASK_FLASH_USER_DATA_ADDRESS → 当前项目用户数据的 Flash 绝对地址；切换 MCU 时按新的 Flash 布局调整
 
 #include "xhh_Task_Flash.h"
 #include "xhh_Task_ALL.h"
 #include "xhh_BSP_Flash.h"   // Flash 原语走 BSP 公共层(见 bsp.md),不直接调厂商 API
+#include "xhh_BSP_SYS.h"
+
+#define XHH_TASK_FLASH_USER_DATA_ADDRESS 0x0800FF00UL
 
 // ===== 持久化结构体(所有用户数据集中) =====
 typedef struct
@@ -54,7 +56,7 @@ void xhh_Task_Flash_Get_User_Data(xhh_Task_Flash_user_data_t *data)
 {
 	if (data == NULL)
 		return;
-	xhh_BSP_Flash_Read(xhh_BSP_FLASH_ID_USER_DATA, 0, (uint8_t *)data, sizeof(*data));
+	xhh_BSP_Flash_Read(XHH_TASK_FLASH_USER_DATA_ADDRESS, (uint8_t *)data, sizeof(*data));
 	if (xhh_Task_Flash_User_Data_IS_Valid(data) == 0)
 	{
 		xhh_Task_Flash_User_Data_Clean(data);
@@ -69,7 +71,14 @@ void xhh_Task_Flash_Save_User_Data(xhh_Task_Flash_user_data_t *data)
 		return;
 	if (xhh_Task_Flash_User_Data_IS_Valid(data) == 0)
 		xhh_Task_Flash_User_Data_Clean(data);
-	xhh_BSP_Flash_Write(xhh_BSP_FLASH_ID_USER_DATA, 0, (uint8_t *)data, sizeof(*data));
+	if (xhh_BSP_Flash_Erase(XHH_TASK_FLASH_USER_DATA_ADDRESS) != xhh_BSP_OK)
+	{
+		xhh_BSP_SYS_ERR_Handle();
+	}
+	if (xhh_BSP_Flash_Write(XHH_TASK_FLASH_USER_DATA_ADDRESS, (uint8_t *)data, sizeof(*data)) != xhh_BSP_OK)
+	{
+		xhh_BSP_SYS_ERR_Handle();
+	}
 }
 
 // ===== 结构体 → 各 Task 运行时对象(开机时) =====
