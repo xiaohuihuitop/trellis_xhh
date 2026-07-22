@@ -18,7 +18,7 @@ void xhh_Task_HoldPP_Cmd(uint8_t cmd);
 
 /**
  * @brief AI:执行保持供电周期处理。
- * @note AI:由 APP 每 100ms 调用一次。
+ * @note AI:由 APP 每 10ms 调用一次。
  */
 void xhh_Task_HoldPP_Loop(void);
 ```

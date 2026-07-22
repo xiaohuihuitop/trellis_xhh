@@ -26,7 +26,7 @@
 
 - 清中断标志
 - 计数 / 置标志位
-- 极轻量输出：LED 呼吸刷新、Motor PWM 输出、HoldPP 脉冲
+- 极轻量输出：LED 呼吸刷新、Motor PWM 输出
 - 唤醒相关的 GPIO 清标志
 
 ```c
