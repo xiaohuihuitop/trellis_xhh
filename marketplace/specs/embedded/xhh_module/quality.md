@@ -147,6 +147,8 @@
 - [ ] 中断里是否做了禁止的事（协议/事件/Flash）？
 - [ ] Task 内是否残留厂商 API 直接调用（`GPIOA_ModeCfg`/`HAL_*` 等，应改 `xhh_BSP_*`）？
 - [ ] Task 函数定义是否遵循“硬件操作接口（`AI:硬件操作接口` 标注）→ Cmd → 其他公开接口 → Loop”的顺序，且 Loop 为文件最后一个函数定义？
+- [ ] 参数型 Task 的 `_Set_*` 是否只更新私有参数，没有隐藏调用 `_Set_Mode_Fun`、`_Apply_*`、目标更新函数或硬件接口？需要即时生效的 Event 是否显式执行“Set 参数 → Mode/Apply”？
+- [ ] 周期 Task 是否只在效果相位或目标值变化时更新输出，未在每个周期重复写相同硬件值？
 - [ ] 持久化是否经 `xhh_BSP_Flash_*` 而非裸 `EEPROM_*`/`HAL_FLASH_*`？
 - [ ] 是否新增了设备型 BSP（`xhh_BSP_Key`/`xhh_BSP_Motor` 等，应禁）？
 - [ ] 公共头是否 include 了芯片 SDK 头（应只在 `.c`）？

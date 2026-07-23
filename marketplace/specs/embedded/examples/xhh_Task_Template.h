@@ -36,6 +36,14 @@ void xhh_Task_Template_Cmd(uint8_t cmd);
 void xhh_Task_Template_Set_Obj(const Template_Obj_t *obj);
 
 /**
+ * @brief AI:按当前私有参数更新 Template 硬件输出。
+ * @param 无。
+ * @return 无。
+ * @note AI:调用方在 Set_Obj 后需要即时生效时，显式调用本接口。
+ */
+void xhh_Task_Template_Apply(void);
+
+/**
  * @brief AI:获取模块对象副本。
  * @param 无。
  * @return 当前模块对象。

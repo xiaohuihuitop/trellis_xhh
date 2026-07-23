@@ -94,6 +94,7 @@
 - [ ] **状态一致性**：事件 case 内多模块联动是否一次性设置完，没有状态改一半
 - [ ] **守卫**：Task `_Loop` 首句 `if (en == 0) return;` 在；参数 `if (NULL) return` 在
 - [ ] **Task 函数顺序**：硬件操作接口以 `AI:硬件操作接口` 标注并置顶，随后 Cmd、其他公开接口，Loop 为文件最后一个函数定义——见 [task-module.md](./task-module.md)
+- [ ] **参数与输出分离**：参数型 `_Set_*` 只改私有状态；需要即时生效时，Event 显式执行 Set 参数后再调用 Mode/Apply；Loop 不重复写未变化的输出——见 [task-module.md](./task-module.md)
 - [ ] **中断禁区**：中断里没有协议解析/事件触发/Flash 读写
 - [ ] **持久化**：Flash 读写经 `xhh_Task_Flash`，没散写 `xhh_BSP_Flash_Write`；新字段加了 `IS_Valid` + `Clean` 默认值 + 双向 `Update`
 - [ ] **路径审查**：涉及协议/状态机/持久化的改动，确认完整读写链路而非只看单函数

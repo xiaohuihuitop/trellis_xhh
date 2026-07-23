@@ -31,6 +31,10 @@ void xhh_Task_Template_Set_Obj(const Template_Obj_t *obj)
 		return;
 	}
 	template_obj = *obj;
+}
+
+void xhh_Task_Template_Apply(void)
+{
 	xhh_Task_Template_Output();
 }
 
@@ -46,5 +50,5 @@ void xhh_Task_Template_Loop(void)
 		return;
 	}
 
-	xhh_Task_Template_Output();
+	/* AI:仅在周期相位或目标值变化时调用 xhh_Task_Template_Output，不能每个周期重复输出。 */
 }

@@ -25,6 +25,35 @@ void xhh_Task_HoldPP_Loop(void);
 
 ---
 
+## 参数设置与输出应用（强制）
+
+当一个 Task 的输出由“业务参数 + 当前模式/状态”共同决定时，参数设置和输出应用必须分离：
+
+- `_Set_*` 只校验并更新 Task 私有参数、表下标或配置状态；不得调用 `_Set_Mode_Fun`、`_Apply_*`、目标更新函数、硬件输出接口或 `xhh_BSP_*`。
+- `_Set_Mode_Fun` 或明确的 `_Apply_*` 是参数组合到业务状态、目标值和即时输出的唯一公开应用入口；调用方先 `_Set_*`，再调用该入口。
+- Event 需要改变参数并即时生效时，case 内显式写出“`_Set_*` → `_Set_Mode_Fun`/`_Apply_*`”两个调用，不把第二步隐藏在 `_Set_*` 中。
+- `_Loop` 只在彩虹、呼吸、闪烁等内部相位实际变化时更新目标并触发输出，不能每个周期重复写相同硬件值。
+- `_Cmd` 为生命周期例外：关闭或复位时可立即应用安全输出。
+
+```c
+void xhh_Task_RGB_Set_Select(RGB_Select_t select)
+{
+	/* AI:只更新 rgb_select 和彩虹下标，不更新目标颜色。 */
+}
+
+void xhh_Task_RGB_Set_Mode_Fun(xhh_Mode_t mode, xhh_Mode_Fun_t mode_fun)
+{
+	/* AI:组合 Select 与 Mode，更新状态和目标颜色。 */
+}
+
+case xhh_Event_RGB_Select_ADD:
+	xhh_Task_RGB_Set_Select(RGB_Select_ADD);
+	xhh_Task_RGB_Set_Mode_Fun(xhh_Mode_Get_N(), xhh_Mode_Fun_Get_N());
+	break;
+```
+
+---
+
 ## 函数定义顺序（强制）
 
 `xhh_Task_<X>.c` 的函数定义按以下顺序组织，便于先定位硬件输出，再阅读业务状态和周期逻辑：
@@ -48,9 +77,14 @@ void xhh_Task_LED_Cmd(uint8_t cmd)
 	/* AI:复位 Task 私有状态。 */
 }
 
-void xhh_Task_LED_Set_Status(LED_Index_t index, LED_Status_t status)
+void xhh_Task_Template_Set_Value(uint8_t value)
 {
-	/* AI:更新业务状态后调用硬件输出接口。 */
+	/* AI:只更新 Task 私有参数，不输出硬件。 */
+}
+
+void xhh_Task_Template_Apply(void)
+{
+	/* AI:组合参数与当前状态后调用硬件输出接口。 */
 }
 
 void xhh_Task_LED_Loop(void)
