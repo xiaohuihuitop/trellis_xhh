@@ -95,6 +95,31 @@ if (level < MOTOR_LEVEL_MIN || level > MOTOR_LEVEL_MAX)
 
 ---
 
+## 外部输入与 Task 参数边界
+
+外部输入和 Task 业务接口的参数可信度不同，必须在边界处明确处理：
+
+- 协议、按键、BLE 等外部输入在解析层或事件参数解析处完成长度、取值范围和枚举合法性校验；不合法的数据不得触发业务 Event，也不得传给 Task。
+- `xhh_Task_*` 的 `_Set_*`、`_Apply_*`、`_Cmd` 只接收已验证的内部业务参数。非法枚举值、非法逻辑资源 ID 或不可能出现的内部状态，视为调用链错误，必须在修改 Task 状态或下发硬件前调用 `xhh_BSP_SYS_ERR_Handle()`。
+- 用于校验外部数据或 Flash 数据的 `IS_Valid` 类接口是例外：可以返回 `xhh_BSP_ERROR_PARAM`，由调用方决定丢弃数据、恢复默认数据或进入业务错误状态。
+- 不允许以“保持旧状态”“截断到 MAX”“映射到默认值”处理非法 Task 参数；这些都会隐藏调用错误或形成未经确认的 fallback。
+
+```c
+/* AI:协议参数在触发 Event 前完成范围校验。 */
+if (level > XHH_TASK_BAT_WORK_MAX)
+{
+	return;
+}
+xhh_Event_Trigger(xhh_Event_BAT_Set_Level, level);
+
+/* AI:Task 只接收可信内部枚举；异常值属于调用链错误。 */
+default:
+	xhh_BSP_SYS_ERR_Handle();
+	return;
+```
+
+---
+
 ## 状态合法性前置守卫
 
 用 `xhh_IS_*` 谓词在动作前检查状态合法性：
@@ -128,13 +153,19 @@ case xhh_Event_ERR:
 
 ## 返回值约定
 
+Task 不定义独立的 `xhh_Module_Status_t`。已有 Task 接口确实需要向调用方表达成功或失败时，统一复用 `xhh_BSP_Status_t`：
+
 | 函数类型 | 返回 |
 |----------|------|
-| 操作类（Init/Cmd/Set） | `void` |
-| 查询类 | 值或枚举 |
-| 谓词 | `uint8_t` 0/1 |
-| Loop 类 | `uint8_t`（0=正常，1=失败），见 `xhh_Task_ADC.c:108-110` |
-| TMOS 事件处理 | `events ^ EVT` |
+| Task 操作类（`Cmd` / `Set` / `Apply`） | 通常为 `void`；不为形式统一新增返回值 |
+| Task 现有状态接口（采样、数据校验等） | `xhh_BSP_Status_t`，成功为 `xhh_BSP_OK` |
+| Task `Loop` | 仅在当前接口确实需要上报状态时使用 `xhh_BSP_Status_t`；原本为 `void` 的 Loop 保持 `void` |
+| 查询类 | 业务值或枚举 |
+| 谓词 | `uint8_t`，仅表示 0/1 真值 |
+| 协议层解析 | 当前项目定义的协议结果枚举 |
+
+- 状态码判断必须使用 `xhh_BSP_OK`、`xhh_BSP_ERROR_PARAM` 等命名枚举，禁止把裸 `0/1` 当作状态码。
+- 不为了统一接口形态给无失败语义的 Task 函数增加返回值，也不改变既有 `void` 函数的控制流。
 
 ---
 
