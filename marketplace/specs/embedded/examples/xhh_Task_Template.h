@@ -29,14 +29,6 @@ typedef struct
 void xhh_Task_Template_Cmd(uint8_t cmd);
 
 /**
- * @brief AI:执行 Template Task 周期逻辑。
- * @param 无。
- * @return 无。
- * @note AI:由 APP 每 10ms 调用一次。
- */
-void xhh_Task_Template_Loop(void);
-
-/**
  * @brief AI:设置模块对象。
  * @param obj 对象指针，不能为空。
  * @return 无。
@@ -49,5 +41,13 @@ void xhh_Task_Template_Set_Obj(const Template_Obj_t *obj);
  * @return 当前模块对象。
  */
 Template_Obj_t xhh_Task_Template_Get_Obj(void);
+
+/**
+ * @brief AI:执行 Template Task 周期逻辑。
+ * @param 无。
+ * @return 无。
+ * @note AI:由 APP 每 10ms 调用一次；实现必须是 Task 源文件中的最后一个函数定义。
+ */
+void xhh_Task_Template_Loop(void);
 
 #endif

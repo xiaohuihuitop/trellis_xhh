@@ -25,6 +25,42 @@ void xhh_Task_HoldPP_Loop(void);
 
 ---
 
+## 函数定义顺序（强制）
+
+`xhh_Task_<X>.c` 的函数定义按以下顺序组织，便于先定位硬件输出，再阅读业务状态和周期逻辑：
+
+1. **硬件操作接口**：所有直接调用 `xhh_BSP_*` 写、启动、停止或设置输出的 `static` 函数放在最前面；前方必须用 `AI:硬件操作接口` 标注。
+2. **Cmd 接口**：`xhh_Task_<X>_Cmd(uint8_t cmd)` 紧随硬件操作接口，集中完成使能位、状态和计数器复位。
+3. **其他公开接口**：`_Set_*`、`_Get_*`、`_Apply_*`、`_IS_*` 按头文件声明顺序定义。
+4. **Loop 接口**：`xhh_Task_<X>_Loop(void)` 必须是文件中最后一个函数定义。
+
+没有硬件输出的 Task 直接从 `Cmd` 开始。简单的状态复位、状态赋值和周期分支收拢在所属公开接口中，不增加私有辅助函数打断以上顺序。确有无法内联的复杂纯算法时，需单独说明其职责，并放在硬件操作接口之后、`Cmd` 之前；不得调用硬件。
+
+```c
+/* AI:硬件操作接口。Task 内所有 BSP 输出只能集中在本区域。 */
+static void xhh_Task_LED_Output_One(LED_Index_t index)
+{
+	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_LED_1_ENABLE, index == LED_Index_1);
+}
+
+void xhh_Task_LED_Cmd(uint8_t cmd)
+{
+	/* AI:复位 Task 私有状态。 */
+}
+
+void xhh_Task_LED_Set_Status(LED_Index_t index, LED_Status_t status)
+{
+	/* AI:更新业务状态后调用硬件输出接口。 */
+}
+
+void xhh_Task_LED_Loop(void)
+{
+	/* AI:文件最后一个函数定义。 */
+}
+```
+
+---
+
 ## 状态初始化与复位
 
 - Task 初始状态直接使用 `.c` 内 `static` 变量初始化器表达。

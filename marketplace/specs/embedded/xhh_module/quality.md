@@ -146,6 +146,7 @@
 - [ ] 是否残留文件头注释（应删）？
 - [ ] 中断里是否做了禁止的事（协议/事件/Flash）？
 - [ ] Task 内是否残留厂商 API 直接调用（`GPIOA_ModeCfg`/`HAL_*` 等，应改 `xhh_BSP_*`）？
+- [ ] Task 函数定义是否遵循“硬件操作接口（`AI:硬件操作接口` 标注）→ Cmd → 其他公开接口 → Loop”的顺序，且 Loop 为文件最后一个函数定义？
 - [ ] 持久化是否经 `xhh_BSP_Flash_*` 而非裸 `EEPROM_*`/`HAL_FLASH_*`？
 - [ ] 是否新增了设备型 BSP（`xhh_BSP_Key`/`xhh_BSP_Motor` 等，应禁）？
 - [ ] 公共头是否 include 了芯片 SDK 头（应只在 `.c`）？
