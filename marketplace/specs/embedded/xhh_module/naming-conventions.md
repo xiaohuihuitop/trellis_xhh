@@ -32,10 +32,10 @@
 
 | 元素 | 规则 | 示例 |
 |------|------|------|
-| BSP 公开参数类型 | `xhh_BSP_<类别>_<参数>_t` | `xhh_BSP_GPIO_Signal_t` |
+| BSP 公开参数类型 | `xhh_BSP_<类别>_<参数>_t` | `xhh_BSP_ADC_Channel_t` |
 | PWM 独立函数族 | `xhh_BSP_PWM<n>_<动词>` | `xhh_BSP_PWM1_Set_Duty` |
 | BSP 公开宏 | `XHH_BSP_*` 全大写 | `XHH_BSP_FLASH_LIGHT_CONFIG_SIZE` |
-| BSP 内部 static | `xhh_BSP_<类别>_<动词>` | `xhh_BSP_GPIO_Resolve`、`xhh_BSP_PWM_Init_Time_Base` |
+| BSP 内部 static | `xhh_BSP_<类别>_<动词>` | `xhh_BSP_PWM_Init_Time_Base` |
 | BSP 头文件保护 | `XHH_BSP_<类别>_H` | `XHH_BSP_GPIO_H` |
 
 动词后置约定(常用后缀):
@@ -81,7 +81,7 @@ uint8_t xhh_IS_Motor_Run(void);
 ## 类型与宏
 
 - 类型用 `typedef ... _t;`,后缀 `_t`
-- **系统级核心类型保留 `xhh_` 前缀**:`xhh_Event_t`、`xhh_Mode_t`、`xhh_SYS_t`、`xhh_BSP_GPIO_Signal_t`
+- **系统级核心类型保留 `xhh_` 前缀**:`xhh_Event_t`、`xhh_Mode_t`、`xhh_SYS_t`、`xhh_BSP_ADC_Channel_t`
 - **业务对象类型可去 `xhh_` 前缀**,用 `<模块>_Obj_t` 形式:`Motor_Obj_t`、`Template_Obj_t`
 - 枚举值用模块前缀:`xhh_SYS_Run`、`MOTOR_MODE_NORMAL`、`LED_...`
 - 宏全大写 + 下划线,常带模块前缀:`KEY_SHAKE_TIME`、`PROTOCOLS_SET_SYS`、`XHH_BSP_FLASH_PAGE_SIZE`

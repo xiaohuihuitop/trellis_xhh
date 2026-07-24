@@ -1,6 +1,6 @@
 # xhh_BSP 公共层
 
-> 硬件操作集中在项目根目录 `xhh_BSP/`。xhh_BSP 公开平台无关的基础外设参数和操作接口，`xhh_Event/Mode/Task` 与 `Components` 不直接碰厂商 API、寄存器或厂商类型。每个项目只有一个 `Platform/`，xhh_BSP 直接适配当前 MCU。
+> 硬件操作集中在项目根目录 `xhh_BSP/`。xhh_BSP 提供当前 MCU 所需的基础外设操作接口，`xhh_Event/Mode/Task` 与 `Components` 不直接调用厂商 API、寄存器或使用厂商类型。每个项目只有一个 `Platform/`，xhh_BSP 直接适配当前 MCU。
 
 ---
 
@@ -22,7 +22,6 @@ xhh_BSP/
 
 - 公共头 `.h` 和实现 `.c` 在根目录 `xhh_BSP/` 内，不分芯片子目录
 - 每个项目只适配当前唯一 `Platform/`，不在 xhh_BSP 内保留多芯片条件分支
-- 更换 MCU 时保持 xhh_BSP 公开接口稳定，重写 `.c` 实现，并同步替换 `Platform/` 和 APP 调度入口
 
 ---
 
@@ -30,10 +29,10 @@ xhh_BSP/
 
 以下规则优先用于判断 BSP 接口和实现是否合理：
 
-- 跨 MCU 稳定的是公开 `.h` 接口，不是 `.c` 实现。更换 MCU 时直接重写对应 BSP `.c`，不要求不同芯片共用内部实现。
-- BSP 是项目开发者手工维护的硬件适配层。引脚、外设实例、通道、分频、模式和时钟源等项目固定参数直接写在 `Init` 实现中。
-- 不为了自动适配不同 MCU，引入跨外设通用 ID、运行时对象、Getter、时钟换算层、参数解析器或通用配置结构体。GPIO 使用稳定逻辑信号名，ADC 使用逻辑通道名，二者都只在各自类别内部表达固定资源。
-- BSP 的 `Init` 不接收板级配置。端口、引脚、有效极性、频率、最大计数、SPI 模式等当前项目固定参数直接写在对应 BSP `.c`。
+- BSP 是项目开发者手工维护的当前 MCU 基础外设驱动层。接口形式由当前确认的硬件需求和上层调用需求决定。
+- 外设实例、通道、分频、模式和时钟源等硬件配置由对应 BSP 实现维护。
+- 不为未经确认的需求引入跨外设通用 ID、运行时对象、Getter、时钟换算层、参数解析器或通用配置结构体。ADC 使用逻辑通道名；GPIO 的资源表达方式不在本规范中预设。
+- BSP 的 `Init` 不接收板级配置。固定的外设初始化参数直接写在对应 BSP `.c`。
 - 不为未来可能性预留模式、方向、收发、DMA、中断、DeInit 或其他接口。新增接口必须对应当前真实需求。
 - 当前项目未使用的外设不新增空 BSP，也不保留无调用的厂家初始化文件；确认出现真实调用后再增加最小接口和实现。
 - 历史项目中手写的 `MX_*`、外设 HAL Handle、DMA 链接、GPIO 复用配置和 MSP 适配应迁入对应 `xhh_BSP_*.c`，Handle 保持文件私有 `static`，不得从公共头暴露。
@@ -43,9 +42,9 @@ xhh_BSP/
 - `void` 占位函数不得操作硬件；返回状态的占位函数必须返回 `xhh_BSP_ERROR_UNSUPPORTED`。不得用 `xhh_BSP_OK`、0、固定采样值、默认 duty 等伪装成真实实现。
 - 简单等待、寄存器写入和少量分支直接写在公开操作函数内，不为隐藏几行代码增加私有辅助函数。
 - 只有当前实现已经存在多处复杂重复，且抽取后明显提高可读性和维护性时，才增加 `static` 私有辅助函数。
-- 芯片差异完全由各项目 BSP `.c` 承担。禁止为了兼容未知芯片，把当前简单实现改造成计算框架或通用驱动层。
+- 当前 MCU 的硬件差异由对应 BSP 实现承担。禁止为了兼容未知芯片，把当前简单实现改造成计算框架或通用驱动层。
 - KISS、YAGNI 优先于形式上的通用性；接口、类型和实现层次保持完成当前需求所需的最小集合。
-- 每个公开接口必须在 `.h` 和 `.c` 两处使用 Doxygen 注释：`.h` 记录跨 MCU 稳定的用途、参数、返回值和前置条件；`.c` 记录当前 MCU 的外设、引脚、通道、关键行为及更换 MCU 时的修改点。
+- 每个公开接口必须在 `.h` 和 `.c` 两处使用 Doxygen 注释：`.h` 记录用途、参数、返回值和前置条件；`.c` 记录当前 MCU 的外设、通道和关键行为。
 
 ---
 
@@ -55,7 +54,7 @@ BSP 只按**基础外设能力**拆文件:
 
 | 类别 | 文件 | 典型接口 |
 |------|------|----------|
-| GPIO | `xhh_BSP_GPIO` | `Init/Read(signal)/Write(signal, active)`，signal 为稳定逻辑信号名 |
+| GPIO | `xhh_BSP_GPIO` | `Init/Read/Write`，参数形式按当前已确认的 GPIO 接口定义 |
 | PWM | `xhh_BSP_PWM` | `Init/PWM1_Start/PWM1_Stop/PWM1_Set_Duty` |
 | IWDG | `xhh_BSP_IWDG` | `Init/Refresh/DeInit` |
 | SPI | `xhh_BSP_SPI` | `SPI1_Init/SPI1_Write_Byte/SPI1_Write` |
@@ -66,6 +65,38 @@ BSP 只按**基础外设能力**拆文件:
 | SYS | `xhh_BSP_SYS` | `Init/IT_Disable/IT_Enable/Reset/Delay_ms` |
 
 新增 BSP 文件的依据**必须是基础外设能力**(如 I2C/SPI/UART),不是业务设备对象。
+
+---
+
+## BSP 生命周期与资源归属
+
+xhh_BSP 负责 MCU 外设及其硬件资源的初始化和运行期操作，不保存产品流程、业务状态、事件或功能逻辑。
+
+### Init：启动阶段初始化
+
+- APP 在启动阶段先调用 `xhh_BSP_SYS_Init`，确认成功后调用当前项目实际使用的各 `xhh_BSP_*_Init`。
+- 每个 `Init` 一次性完成所属外设的默认硬件配置，包括外设实例、时钟、DMA/中断、专属引脚复用或模拟模式，以及安全初始状态。
+- `xhh_BSP_GPIO_Init` 只初始化普通 GPIO；ADC、PWM、SPI、I2C、UART 等外设专属引脚分别由对应 BSP 的 `Init` 完成。
+- APP 不建立 `APP_GPIO_Config`、Board Config 或其他硬件配置整合层；固定硬件参数只在对应 BSP `.c` 维护。
+- `xhh_Module` 和 Components 不调用 MCU 外设 `Init`，也不直接配置 GPIO 模式、复用、上下拉或中断。
+
+### 运行期操作
+
+- `Read`、`Write`、`Set`、`Start`、`Stop`、`Enter_Sleep`、`Enter_Wake` 等公开接口用于运行期操作已初始化的硬件。
+- 运行期接口可以修改所属硬件的输出、使能、复用或低功耗状态；例如调试复用切换、PWM 启停和唤醒后恢复。
+- 运行期硬件重配置必须是所属 BSP 的明确公开接口，不得由 Module、Component 直接调用厂家 API 实现。
+- 运行期接口只执行硬件操作；是否执行、何时执行及其业务条件由 APP、Event、Mode 或 Task 决定。
+
+### 资源唯一归属
+
+- 每个硬件资源只能由一个 BSP 初始化和配置，禁止多个 BSP 重复配置同一端口、引脚、DMA 通道、定时器、ADC 通道或中断。
+- 普通 GPIO 归 `xhh_BSP_GPIO`；ADC 模拟引脚归 `xhh_BSP_ADC`；PWM 复用引脚归 `xhh_BSP_PWM`；SPI/I2C/UART 复用引脚归各自 BSP。
+- 新增、删除或调整硬件资源时，必须同步核对资源归属、对应 BSP Init、`xhh_BSP_SYS_Init` 的时钟清单、Project 配置和 README。
+
+### 外部器件
+
+- LCD、传感器等 Component 负责器件寄存器、命令、时序和数据处理；MCU 的 SPI、GPIO、I2C、Delay 等操作只能通过已初始化的 BSP 公开接口完成。
+- Component 的 `LCD_Init` 等接口属于外部器件初始化，不是 MCU 外设初始化；不得在其中调用厂家 API 或重复配置 MCU 外设资源。
 
 ---
 
@@ -80,30 +111,42 @@ BSP 只按**基础外设能力**拆文件:
 
 ---
 
-## 资源表达策略
+## GPIO 接口
 
-GPIO 与 ADC 使用各自类别内的稳定逻辑名，上层不保存真实端口、引脚、有效极性或厂家通道：
+`xhh_BSP_GPIO` 只归属基础 GPIO 外设能力。普通 GPIO 的模式、上下拉和安全初始电平由 `xhh_BSP_GPIO_Init` 一次性完成；上层只对已初始化的资源执行读写。
 
 ```c
 typedef enum
 {
-	xhh_BSP_GPIO_KEY_OK_PRESSED = 0,
-	xhh_BSP_GPIO_MOTOR_ENABLE,
-	xhh_BSP_GPIO_LCD_SELECT
-} xhh_BSP_GPIO_Signal_t;
+	xhh_BSP_GPIO_PORT_A = 0,
+	xhh_BSP_GPIO_PORT_B
+	/* AI:仅声明当前 MCU 实际具备且项目需要公开使用的端口。 */
+} xhh_BSP_GPIO_Port_t;
+
+typedef enum
+{
+	xhh_BSP_GPIO_LEVEL_LOW = 0,
+	xhh_BSP_GPIO_LEVEL_HIGH
+} xhh_BSP_GPIO_Level_t;
 
 void xhh_BSP_GPIO_Init(void);
-uint8_t xhh_BSP_GPIO_Read(xhh_BSP_GPIO_Signal_t signal);
-void xhh_BSP_GPIO_Write(xhh_BSP_GPIO_Signal_t signal, uint8_t active);
+xhh_BSP_GPIO_Level_t xhh_BSP_GPIO_Read(
+	xhh_BSP_GPIO_Port_t port,
+	uint8_t pin);
+void xhh_BSP_GPIO_Write(
+	xhh_BSP_GPIO_Port_t port,
+	uint8_t pin,
+	xhh_BSP_GPIO_Level_t level);
 ```
 
-- `xhh_BSP_GPIO_Init` 一次性配置当前项目实际使用的全部 GPIO，包括模式、上下拉、初始电平和复用。
-- `Read` 返回输入逻辑信号是否有效；`Write` 接收输出逻辑信号的有效/无效状态。
-- 真实端口、引脚和有效极性只存在于 `xhh_BSP_GPIO.c`，Task、APP 和 Components 不传递硬件配置。
-- GPIO 逻辑信号名可以包含 Key、Motor、LCD 等使用语义，但仍统一保留在基础 `xhh_BSP_GPIO` 文件中；禁止据此拆出设备型 BSP。
-- 公开头不得出现 `GPIO_TypeDef *`、`GPIO_Pin_*`、HAL Handle、真实引脚号或厂家宏。
+- `xhh_BSP_GPIO.h` 不得定义 Key、Motor、LCD 等项目功能对象。
+- `port` 和 `pin` 表示物理 GPIO 资源；`level` 表示真实高低电平，不表达按键按下、电机使能、片选有效等业务语义。
+- `pin` 使用端口内引脚序号，取值范围由当前 MCU BSP 明确说明；上层不得传入厂家位掩码或厂家类型。
+- 有效电平、功能极性和器件控制语义由 Task 或 Component 在调用处表达，BSP 不进行“active”到高低电平的业务换算。
+- 公开头不得暴露厂商类型、厂商宏、寄存器定义或 HAL Handle。
 - GPIO、PWM、Timer、SPI、ADC 分别设计自己的最小接口，不建立跨类别通用硬件 ID。
-- 非法逻辑信号不得静默映射到默认端口、引脚或电平。
+- 非法资源或电平参数不得静默映射到默认硬件资源或默认电平。
+- 调试复用、低功耗等运行期 GPIO 模式切换，必须由 `xhh_BSP_GPIO_*_Set` 等 BSP 公开接口完成；该接口属于运行期设置，不属于启动 `Init`。
 
 Timer 第一版固定提供 100us 和 1ms 两个中断节拍：
 
@@ -154,26 +197,33 @@ void xhh_BSP_SPI1_Write(const uint8_t *data, uint16_t length);
 - SPI 不管理器件 CS、DC、RESET 等信号。外部器件驱动通过 GPIO 控制这些信号，并负责确定一次事务的边界。
 - 没有明确需求时，不增加接收、全双工、DMA、中断、DeInit、动态模式切换或通用配置对象。
 
-ADC 使用稳定的逻辑通道名：
+ADC 固定使用 10 个逻辑槽位：
 
 ```c
 typedef enum
 {
 	xhh_BSP_ADC_CHANNEL_0 = 0,
 	xhh_BSP_ADC_CHANNEL_1,
-	xhh_BSP_ADC_CHANNEL_2
+	xhh_BSP_ADC_CHANNEL_2,
+	xhh_BSP_ADC_CHANNEL_3,
+	xhh_BSP_ADC_CHANNEL_4,
+	xhh_BSP_ADC_CHANNEL_5,
+	xhh_BSP_ADC_CHANNEL_6,
+	xhh_BSP_ADC_CHANNEL_7,
+	xhh_BSP_ADC_CHANNEL_8,
+	xhh_BSP_ADC_CHANNEL_9
 } xhh_BSP_ADC_Channel_t;
 
 void xhh_BSP_ADC_Init(void);
 uint16_t xhh_BSP_ADC_Read(xhh_BSP_ADC_Channel_t channel);
 ```
 
-- `CHANNEL_0/1/2` 是跨 MCU 稳定的逻辑槽位名，枚举值只用于标识槽位，不代表任何厂家的硬件通道值。
-- 公开头只声明当前项目实际使用的逻辑槽位，不出现 `ADC_CHANNEL_5`、`ADC_Channel_8` 等厂家宏，也不按未来可能性预留未使用槽位。
+- `CHANNEL_0..9` 始终完整声明；枚举值只用于标识逻辑槽位，不代表任何厂家的硬件通道值。
+- README 必须记录当前产品的采样对象到逻辑槽位映射，例如 BAT -> `CHANNEL_0`、充电检测 -> `CHANNEL_1`；业务代码只使用 README 已登记的槽位。
 - `Init` 不接收参数；GPIO、ADC 外设、已使用通道、采样时间、对齐方式和校准流程全部由当前项目 `.c` 手工实现。
-- 每个 MCU 的 `xhh_BSP_ADC.c` 必须手工把逻辑槽位映射到真实厂家通道值。例如当前项目可将 `CHANNEL_0` 映射到硬件通道 5，换 MCU 后允许映射到其他值。
-- 映射使用简单 `switch` 或等价的编译期常量表达，不建设运行时通道注册、Getter 或自动适配框架。
-- `Read` 返回对应逻辑槽位的 ADC 原始计数值；非法逻辑槽位不得静默改用默认硬件通道。
+- 每个已登记槽位必须在 `xhh_BSP_ADC.c` 中明确映射到真实厂家通道值。例如当前项目可将 `CHANNEL_0` 映射到硬件通道 5。
+- 映射使用简单 `switch` 或等价的编译期常量表达，不建设运行时通道注册、Getter 或自动适配框架；未登记槽位必须进入 `xhh_BSP_SYS_ERR_Handle()`，不得猜测或复用其他硬件通道。
+- `Read` 返回对应逻辑槽位的 ADC 原始计数值；非法或未登记槽位不得静默改用默认硬件通道。
 - ADC BSP 不执行平均、滤波、电压、温度、电阻或其他业务量换算，这些处理归使用 ADC 的 Task 或 Component。
 - 没有明确需求时，不增加连续采样、扫描、DMA、中断、内部参考源、DeInit 或动态采样配置。
 
@@ -232,12 +282,12 @@ void xhh_BSP_PWM1_Set_Duty(uint16_t duty_count);
 | 元素 | 规则 | 示例 |
 |------|------|------|
 | 公开函数 | `xhh_BSP_<类别>_<动词>`（XHH 分层命名，缩写词全大写 GPIO/PWM/ADC/RTC/IT） | `xhh_BSP_GPIO_Read`、`xhh_BSP_Flash_Write` |
-| 公开参数类型 | `xhh_BSP_<类别>_<参数>_t` | `xhh_BSP_GPIO_Signal_t` |
+| 公开参数类型 | `xhh_BSP_<类别>_<参数>_t` | `xhh_BSP_ADC_Channel_t` |
 | PWM 函数族 | `xhh_BSP_PWM<n>_<动词>` | `xhh_BSP_PWM1_Set_Duty` |
 | SPI 函数族 | `xhh_BSP_SPI<n>_<动词>` | `xhh_BSP_SPI1_Write` |
 | ADC 读取 | `xhh_BSP_ADC_Read(channel)` | `xhh_BSP_ADC_Read(xhh_BSP_ADC_CHANNEL_0)` |
 | 公开宏 | `XHH_BSP_*` 全大写 | `XHH_BSP_FLASH_LIGHT_CONFIG_SIZE` |
-| 内部 static 辅助 | `xhh_BSP_<类别>_<动词>` | `xhh_BSP_GPIO_Resolve`、`xhh_BSP_PWM_Init_Time_Base` |
+| 内部 static 辅助 | `xhh_BSP_<类别>_<动词>` | `xhh_BSP_PWM_Init_Time_Base` |
 | 头文件保护 | `XHH_BSP_<类别>_H` | `XHH_BSP_GPIO_H` |
 
 ---
@@ -277,7 +327,7 @@ void xhh_BSP_Delay_ms(uint32_t ms);
 - `ERR_Handle` 统一处理 BSP 不可恢复错误，当前固定实现为 `while (1)` 停机，不自动复位、不继续执行，也不增加 fallback。
 - 毫秒阻塞延时直接归入 SYS 头文件，不单独建立 Delay BSP；项目实现不得与 Timer BSP 重复占用或破坏同一计时资源。
 - APP、xhh_Module、Components 和其他 BSP 需要毫秒延时时统一调用 `xhh_BSP_Delay_ms`，禁止直接调用 `HAL_Delay`、厂家 Delay 或 SDK 延时函数。
-- 厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的 `xhh_BSP_Delay_ms` 平台适配实现中；更换 MCU 时只重写该实现。
+- 厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的 `xhh_BSP_Delay_ms` 平台适配实现中。
 
 跨 Task 共享外设或业务变量的短临界区统一使用 `xhh_BSP_SYS_IT_Disable/IT_Enable` 包夹。临界区内禁止阻塞和耗时操作。
 
@@ -304,11 +354,7 @@ LCD、OLED 等显示外设的背光、显示输出和控制器内部模拟电路
 
 ## BSP 初始化
 
-- APP 先调用 `xhh_BSP_SYS_Init`，确认成功后直接调用当前项目实际使用的各 `xhh_BSP_*_Init`。
-- `xhh_BSP_GPIO_Init` 配置全部固定 GPIO；`xhh_BSP_PWM_Init` 配置全部固定 PWM；ADC、SPI、IWDG、Timer 等由各自 Init 完成初始化。
-- APP 不建立 `APP_GPIO_Config`、Board Config 或其他硬件配置整合层。
-- Task 不提供 `Config/Init/DeInit`，不接收端口、引脚、频率、通道或有效极性。
-- 每个 BSP 的固定参数只在对应 `.c` 维护；新增或删除硬件资源时修改该 BSP Init 和 `xhh_BSP_SYS_Init` 的时钟清单。
+初始化职责以“[BSP 生命周期与资源归属](#bsp-生命周期与资源归属)”为准。APP 只负责调用顺序；每个 BSP 负责所属硬件资源的完整初始化；Task 不提供 `Config/Init/DeInit`，不参与硬件初始化参数配置。
 
 ---
 
@@ -367,6 +413,7 @@ PWM 的业务等级到占空比计数换算属于 Task；定时器、ADC 等平�
 - 占位函数返回默认成功、伪造硬件值或执行未经确认的 fallback
 - 业务参数→硬件值换算放 BSP(应在 Task static)
 - BSP 模块写 `_Loop` / `_Cmd` / 使能位
-- 同时维护逻辑信号接口和 port/pin 配置接口两套等价 GPIO 抽象
 - 在 APP 或 Task 中增加 GPIO/PWM 等硬件 Config 接口
+- 在 Module 或 Components 中直接调用厂家 API 配置外设、GPIO、DMA 或中断
+- 多个 BSP 初始化或运行期配置同一硬件资源
 - 在 `xhh_BSP_SYS.c` 以外直接调用厂家毫秒延时接口

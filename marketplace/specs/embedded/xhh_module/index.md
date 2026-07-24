@@ -49,7 +49,7 @@
 
 | 骨架 | 用途 |
 |------|------|
-| `xhh_BSP_Template.c/.h` | BSP 公共层骨架（逻辑信号 + BSP 内固定硬件映射） |
+| `xhh_BSP_Template.c/.h` | BSP 公共层骨架（按当前类别补充已确认的硬件接口） |
 | `xhh_Task_All_Template.h/.c` | 聚合层骨架（聚合 include + 转发各模块 Cmd） |
 | `xhh_Task_Template.c/.h` | Task 按需 Cmd/Loop/Get/Set 模板 |
 | `xhh_Event_Template.c/.h` | 事件枚举 + Trigger + Handle 骨架 |
@@ -68,9 +68,9 @@
 - [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine.md](./state-machine.md)
 - [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
 - [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
-- [ ] **涉及硬件操作**：Task 不直接调厂商 API/引脚号/寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
+- [ ] **涉及硬件操作**：Task 不直接调厂商 API 或寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
 - [ ] **涉及硬件事实**：先阅读项目根 `README.md` 的 MCU、板卡、硬件资料和限制；硬件信息与原理图、Project 或 BSP 冲突时先核对，不按猜测修改——见 [directory-structure.md](./directory-structure.md)
-- [ ] **涉及 ADC**：上层只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
+- [ ] **涉及 ADC**：上层只使用 README 已登记的 `xhh_BSP_ADC_CHANNEL_0..9` 逻辑槽位，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
 - [ ] **涉及 Components 硬件访问**：Components 只调用 `xhh_BSP_*`，不包含 `main.h`、产品层或厂家头——见 [directory-structure.md](./directory-structure.md)
 - [ ] **涉及延时**：统一调用 `xhh_BSP_Delay_ms`；厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的平台适配实现中——见 [bsp.md](./bsp.md)
 - [ ] **涉及关机、Sleep、Shutdown 或显示外设**：确认显示控制器、背光和通信接口均按数据手册完整关断；`Display Off` 不等于 `Sleep In`——见 [bsp.md](./bsp.md)

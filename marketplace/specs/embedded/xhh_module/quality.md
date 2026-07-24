@@ -151,12 +151,14 @@ static uint32_t xhh_Task_BAT_Charge_MARK(uint32_t voltage_mv)
 - [ ] `Platform/` 是否只包含当前项目唯一 MCU，没有多芯片实现或大段平台切换宏？
 - [ ] `Platform/Src` 是否只保留厂家 SDK、启动、系统、配置和厂家中断骨架，没有项目手写的 `MX_*`、外设 Handle、DMA 或外设初始化封装？
 - [ ] BSP 专属 IRQ 是否归对应 `xhh_BSP_*.c`，且厂家中断骨架没有反向 include `xhh_BSP`？
+- [ ] APP 是否只负责按顺序调用实际使用的 BSP Init，Module/Components 是否没有调用 MCU 外设 Init 或直接配置 GPIO、DMA、中断？
+- [ ] 每个端口/引脚、DMA 通道、定时器、ADC 通道和中断是否只有一个 BSP 负责初始化与配置，没有重复归属？
 - [ ] 当前未使用的外设是否已从工程移除，且没有为了目录完整新增空 BSP？
 - [ ] 项目根 `README.md` 是否列出当前 MCU、板卡版本、硬件资料路径、已启用基础外设和硬件限制？
 - [ ] 本次是否修改了 MCU、板卡、引脚、ADC 映射、外设实例、Timer/DMA、时钟、Flash 分区或调试/唤醒约束？若是，README、Project 和对应 `xhh_BSP_*.c` 是否已同步核对更新？
 - [ ] `xhh_Module/` 是否只依赖 `xhh_BSP/` 和 `Components/`，没有直接依赖 `Platform/`？
 - [ ] `Components/` 是否保持产品和 MCU 无关；如需硬件能力，是否只 include `xhh_BSP/` 公共头，没有 include `main.h`、`xhh_Module/` 或厂商头？
-- [ ] ADC 公开头是否只使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名，厂家硬件通道值是否只存在于 `xhh_BSP_ADC.c`？
+- [ ] ADC 公开头是否完整声明 `xhh_BSP_ADC_CHANNEL_0..9`？README 已登记槽位是否均在 `xhh_BSP_ADC.c` 映射到厂家硬件通道，未登记槽位是否明确报错而非猜测映射？
 - [ ] 占位函数是否均在函数体内使用 `AI:` 注释说明原因、当前行为和启用条件，并且没有默认成功、伪造硬件值或静默 fallback？
 - [ ] 改动是否尊重现有模块边界？
 - [ ] 事件/状态/Task 顺序会不会导致状态改一半？
@@ -170,7 +172,7 @@ static uint32_t xhh_Task_BAT_Charge_MARK(uint32_t voltage_mv)
 - [ ] Task 函数定义是否遵循“硬件操作接口（`AI:硬件操作接口` 标注）→ Cmd → 其他公开接口 → Loop”的顺序，且 Loop 为文件最后一个函数定义？
 - [ ] 参数型 Task 的 `_Set_*` 是否只更新私有参数，没有隐藏调用 `_Set_Mode_Fun`、`_Apply_*`、目标更新函数或硬件接口？需要即时生效的 Event 是否显式执行“Set 参数 → Mode/Apply”？
 - [ ] 周期 Task 是否只在效果相位或目标值变化时更新输出，未在每个周期重复写相同硬件值？
-- [ ] 外部输入是否在协议/事件参数解析处完成长度、范围和枚举校验；非法数据是否未传入 Task？Task 收到非法枚举或逻辑资源 ID 时，是否在改状态或输出前调用 `xhh_BSP_SYS_ERR_Handle()`，而非静默保持旧状态？
+- [ ] 外部输入是否在协议/事件参数解析处完成长度、范围和枚举校验；非法数据是否未传入 Task？Task 收到非法枚举或资源参数时，是否在改状态或输出前调用 `xhh_BSP_SYS_ERR_Handle()`，而非静默保持旧状态？
 - [ ] Task 既有状态返回接口是否统一使用 `xhh_BSP_Status_t` 和命名状态码，未定义 `xhh_Module_Status_t`，也未用裸 `0/1` 表示成功或失败？
 - [ ] 持久化是否经 `xhh_BSP_Flash_*` 而非裸 `EEPROM_*`/`HAL_FLASH_*`？
 - [ ] 是否新增了设备型 BSP（`xhh_BSP_Key`/`xhh_BSP_Motor` 等，应禁）？

@@ -8,7 +8,7 @@
 
 | 文件 | 用途 | 复制后改成 |
 |------|------|-----------|
-| `xhh_BSP_Template.c/.h` | BSP 公共层骨架（逻辑信号 + BSP 内固定厂家资源） | `Template/TEMPLATE` → 类别名，文件名 → 对应 `xhh_BSP_<类别>.c/.h` |
+| `xhh_BSP_Template.c/.h` | BSP 公共层骨架（按当前类别补充硬件接口） | `Template/TEMPLATE` → 类别名，文件名 → 对应 `xhh_BSP_<类别>.c/.h` |
 | `xhh_Task_All_Template.h` / `.c` | 聚合层骨架（聚合 include + 转发各模块 Cmd） | 文件名 → `xhh_Task_ALL.h` / `xhh_Task.c`，按需增减 Task 头和 Cmd 转发 |
 | `xhh_Task_Template.h` | Task 模块头文件（Cmd/Loop + 类型 + 宏） | `Template` → 你的模块名（如 `Temp`） |
 | `xhh_Task_Template.c` | Task 模块实现（无 Init/DeInit + 调 `xhh_BSP_*` + Loop 守卫） | 同上 + 填业务逻辑和换算；真实硬件资源只填入 BSP |

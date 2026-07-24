@@ -1,7 +1,5 @@
 #include "xhh_Task_Template.h"
 
-#include "xhh_BSP_GPIO.h"
-
 static volatile uint8_t xhh_task_template_en = 0U;
 static Template_Obj_t template_obj = {TEMPLATE_MODE_A, TEMPLATE_VALUE_MIN};
 
@@ -10,12 +8,11 @@ static void xhh_Task_Template_Output(void)
 {
 	if (xhh_task_template_en == 0U)
 	{
-		xhh_BSP_GPIO_Write(xhh_BSP_GPIO_TEMPLATE_ENABLE, 0U);
+		/* AI:复制后通过当前已确认的 BSP 接口关闭输出。 */
 		return;
 	}
 
-	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_TEMPLATE_ENABLE,
-					   template_obj.value > TEMPLATE_VALUE_MIN);
+	/* AI:复制后通过当前已确认的 BSP 接口应用 template_obj。 */
 }
 
 void xhh_Task_Template_Cmd(uint8_t cmd)

@@ -10,7 +10,7 @@
 项目根目录/
 ├── APP/                         # 入口与产品集成
 ├── xhh_Module/                  # Event/Mode/Task 业务逻辑
-├── xhh_BSP/                     # 当前 MCU 基础外设能力抽象
+├── xhh_BSP/                     # 当前 MCU 基础外设驱动
 ├── Platform/                    # 当前项目唯一 MCU 平台
 ├── Components/                  # MCU 无关公共组件
 ├── Project/                     # IDE 工程配置和编译输出
@@ -54,7 +54,7 @@ APP/
 └── assets/                      # UI 图片、字体等产品资源
 ```
 
-- `main.c` 是固定入口，负责 BSP 初始化、Event/Task 初始触发与主循环调度。调度复杂时，可按需使用 `main_task.c/.h` 拆分调度代码；不建立 APP 硬件 Config 聚合层。
+- `main.c` 是固定入口，负责按顺序调用 BSP 初始化、Event/Task 初始触发与主循环调度。调度复杂时，可按需使用 `main_task.c/.h` 拆分调度代码；不建立 APP 硬件 Config 聚合层。
 - 多模块业务联动必须进入 `xhh_Event`，不得长期堆在 `main.c` 或协议回调中。
 - 厂商调度机制只留在 APP 入口适配处，不扩散到 Event/Mode/Task。
 
@@ -72,8 +72,8 @@ xhh_Module/
 - `xhh_Event` 统一协调多模块联动。
 - `xhh_Mode` 负责系统状态和状态推进。
 - `xhh_Task` 负责 Motor、BAT、Key、UI 等产品功能域。
-- 业务层禁止 include `main.h`、厂商 SDK 头、芯片寄存器定义和具体引脚号。
-- `xhh_Task_*` 通过根目录 `xhh_BSP/` 的公开接口访问硬件，不提供硬件 Config、Init 或 DeInit。
+- 业务层禁止 include `main.h`、厂商 SDK 头和芯片寄存器定义。
+- `xhh_Task_*` 通过根目录 `xhh_BSP/` 的公开运行期接口访问已初始化硬件，不提供硬件 Config、Init 或 DeInit。
 
 ---
 
@@ -87,6 +87,7 @@ xhh_Module/
 - 板卡名称、硬件版本、原理图或 PCB 资料路径及版本
 - 当前系统时钟、电源条件和已启用的基础外设能力
 - 已接入的产品外设及其逻辑名称，例如 LCD、按键、电机、ADC 采样、充电检测
+- ADC 采样对象到 `xhh_BSP_ADC_CHANNEL_0..9` 逻辑槽位的映射
 - 影响开发和烧录的硬件限制，例如 SWD 复用、BOOT、唤醒脚、保留 Flash 区域、外设引脚冲突
 
 物理硬件信息的核对优先级固定如下：
@@ -97,7 +98,7 @@ xhh_Module/
 
 - README 与任一更高优先级来源冲突时，必须停止相关改动并核对；不得根据猜测选择其中一个值。
 - MCU、板卡版本、引脚、ADC 映射、外设实例、Timer/DMA、时钟、Flash 分区、调试/唤醒约束发生变化时，必须在同一开发任务中同步更新 README 和对应 `xhh_BSP`/Project 配置。
-- README 可以列出用于核对的物理映射；运行时唯一实现仍在 `xhh_BSP_*.c`，业务层不得从 README 复制真实端口、引脚或厂家通道值到代码。
+- README 可以列出用于核对的物理映射；README 只作为硬件事实核对依据，不替代实际代码实现。
 
 ---
 
@@ -117,10 +118,11 @@ xhh_BSP/
 └── xhh_BSP_SYS.c/.h
 ```
 
-- xhh_BSP 通过类别专用的平台无关参数隔离厂商类型和寄存器表达；GPIO 使用稳定逻辑信号名，ADC 使用稳定逻辑通道名，真实端口、引脚、极性和厂家通道只存在于对应 BSP `.c`。PWM 使用无产品语义的独立操作函数族，例如 `xhh_BSP_PWM1_*`。
+- xhh_BSP 按 GPIO、PWM、ADC 等基础外设能力拆分；GPIO 公开接口使用端口、引脚和高低电平，不定义项目功能对象；ADC 固定使用 `CHANNEL_0..9` 逻辑槽位。PWM 使用无产品语义的独立操作函数族，例如 `xhh_BSP_PWM1_*`。
 - xhh_BSP 实现可调用 `Platform/` 中当前芯片的厂商 API。
 - xhh_BSP 公开头禁止泄露厂商类型、厂商宏和寄存器定义。
 - 不增加 `Port -> xhh_BSP` 转发层；xhh_BSP 直接将公开参数转换为当前 Platform 的厂商资源。
+- BSP 的初始化、运行期操作和资源归属以 [bsp.md](./bsp.md) 的“BSP 生命周期与资源归属”为准。
 - 为保持框架接口和生命周期统一，允许保留明确登记的占位函数。占位函数体内必须使用 `AI:` 注释说明占位原因、当前无动作行为和后续启用条件；返回状态的接口必须返回 `xhh_BSP_ERROR_UNSUPPORTED`，禁止默认成功、伪造硬件值或静默 fallback。
 
 详见 [bsp.md](./bsp.md)。
@@ -149,8 +151,6 @@ Platform/
 - 厂家中断骨架可以保留在 `Platform`；只服务于一个 BSP 的 ADC、DMA、Timer 等外设 IRQ 适配应放入对应 `xhh_BSP_*.c`。核心异常、SysTick 和无法归属单一 BSP 的板级中断入口仍可留在厂家中断骨架。
 - 当前项目未使用的外设直接不纳入工程，不为保持目录或接口数量一致而新增空 BSP。
 
-更换 MCU 时，创建新项目或新分支，整体替换 `Platform/`，并重写 `xhh_BSP/` 实现及 APP 调度入口适配；`xhh_Module/` 和 `Components/` 应保持不变。
-
 ---
 
 ## Components：公共组件
@@ -165,8 +165,9 @@ Components/
 ```
 
 - 仅放跨项目行为稳定、没有产品语义、没有直接 MCU 依赖的组件。
-- 纯算法组件只依赖 C 标准库和自身公开头；LCD、传感器等外部器件组件允许 include `xhh_BSP_*.h`，通过 GPIO、SPI、I2C、Delay 等基础能力访问硬件。
-- Components 禁止感知厂家类型、寄存器、真实引脚、MCU 型号以及 Task/Event/Mode 等产品状态。
+- 纯算法组件只依赖 C 标准库和自身公开头；LCD、传感器等外部器件组件允许 include `xhh_BSP_*.h`，通过已初始化的 GPIO、SPI、I2C、Delay 等基础能力访问硬件。
+- Components 禁止感知厂家类型、寄存器、MCU 型号以及 Task/Event/Mode 等产品状态。
+- Component 的器件初始化不等于 MCU 外设初始化；Component 不得调用厂家 API 或配置 MCU 外设、GPIO、DMA 和中断。
 - 当前项目只使用一次且抽象后更难理解的代码，不进入 `Components/`。
 - 同名文件在多个项目中仍有行为差异时，先留在 APP 或 xhh_Module，不为追求复用强行合并。
 

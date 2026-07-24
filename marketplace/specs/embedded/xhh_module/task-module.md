@@ -1,6 +1,6 @@
 # Task 模块模式
 
-> 每个功能域对应一个 `xhh_Task_<X>.c/.h`。Task 只维护业务状态、处理命令和执行周期逻辑；全部硬件初始化由对应 `xhh_BSP_*_Init` 完成。
+> 每个功能域对应一个 `xhh_Task_<X>.c/.h`。Task 只维护业务状态、处理命令和执行周期逻辑；全部 MCU 硬件初始化由 APP 调用对应 `xhh_BSP_*_Init` 完成，Task 只使用 BSP 运行期接口。
 
 ---
 
@@ -69,7 +69,7 @@ case xhh_Event_RGB_Select_ADD:
 /* AI:硬件操作接口。Task 内所有 BSP 输出只能集中在本区域。 */
 static void xhh_Task_LED_Output_One(LED_Index_t index)
 {
-	xhh_BSP_GPIO_Write(xhh_BSP_GPIO_LED_1_ENABLE, index == LED_Index_1);
+	/* AI:通过当前项目已确认的 xhh_BSP GPIO 接口完成输出。 */
 }
 
 void xhh_Task_LED_Cmd(uint8_t cmd)
@@ -112,7 +112,7 @@ void xhh_Task_Motor_Cmd(uint8_t cmd)
 	motor_delay_count = 0;
 	if (cmd == 0U)
 	{
-		xhh_BSP_GPIO_Write(xhh_BSP_GPIO_MOTOR_ENABLE, 0U);
+		/* AI:需要关断输出时，调用本 Task 顶部的硬件操作接口。 */
 	}
 }
 ```
@@ -149,17 +149,16 @@ void xhh_Task_Motor_Loop(void)
 
 ## 硬件访问
 
-Task 只能调用 `xhh_BSP_*` 公开接口，不出现厂商 API、寄存器、端口、真实引脚号或硬件初始化参数：
+Task 只能调用 `xhh_BSP_*` 公开接口，不直接调用厂商 API 或操作寄存器：
 
 ```c
-xhh_BSP_GPIO_Write(xhh_BSP_GPIO_MOTOR_ENABLE, enable);
 xhh_BSP_PWM1_Set_Duty(LevelToDutyCount(level));
 ```
 
-- GPIO 使用 BSP 公开的稳定逻辑信号名；端口、引脚和有效极性只在 `xhh_BSP_GPIO.c`。
-- ADC 使用 `xhh_BSP_ADC_CHANNEL_<n>` 逻辑通道名；厂家通道值只在 `xhh_BSP_ADC.c`。
+- GPIO 调用传递 BSP 公开的端口、引脚和高低电平；Task 在调用处表达有效电平和功能语义，不重新配置 GPIO 模式。
+- ADC 使用 `xhh_BSP_ADC_CHANNEL_0..9` 逻辑槽位；厂家通道值只在 `xhh_BSP_ADC.c`，业务代码只使用 README 已登记槽位。
 - 业务参数到硬件计数值的换算仍放在 Task 私有函数中。
-- Task 不提供 `Config` 接口接收硬件资源，也不保存板级端口和引脚配置。
+- Task 不提供 `Config` 接口配置硬件初始化参数。
 
 ---
 
@@ -186,7 +185,6 @@ void xhh_Task_ALL_Cmd(uint8_t en);
 
 - Task 声明或实现 `_Init`、`_DeInit`。
 - Task 提供 GPIO/PWM/ADC 等硬件 `Config` 接口。
-- Task 保存真实端口、引脚、厂家通道或硬件初始化参数。
 - 在周期接口中遗漏使能守卫。
 - Task 直接调用厂家 API、寄存器或 include 厂家 SDK 头。
 - 为接口形式统一增加 Task `_Init/_DeInit` 空函数。

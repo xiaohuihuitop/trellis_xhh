@@ -100,7 +100,7 @@ if (level < MOTOR_LEVEL_MIN || level > MOTOR_LEVEL_MAX)
 外部输入和 Task 业务接口的参数可信度不同，必须在边界处明确处理：
 
 - 协议、按键、BLE 等外部输入在解析层或事件参数解析处完成长度、取值范围和枚举合法性校验；不合法的数据不得触发业务 Event，也不得传给 Task。
-- `xhh_Task_*` 的 `_Set_*`、`_Apply_*`、`_Cmd` 只接收已验证的内部业务参数。非法枚举值、非法逻辑资源 ID 或不可能出现的内部状态，视为调用链错误，必须在修改 Task 状态或下发硬件前调用 `xhh_BSP_SYS_ERR_Handle()`。
+- `xhh_Task_*` 的 `_Set_*`、`_Apply_*`、`_Cmd` 只接收已验证的内部业务参数。非法枚举值、非法资源参数或不可能出现的内部状态，视为调用链错误，必须在修改 Task 状态或下发硬件前调用 `xhh_BSP_SYS_ERR_Handle()`。
 - 用于校验外部数据或 Flash 数据的 `IS_Valid` 类接口是例外：可以返回 `xhh_BSP_ERROR_PARAM`，由调用方决定丢弃数据、恢复默认数据或进入业务错误状态。
 - 不允许以“保持旧状态”“截断到 MAX”“映射到默认值”处理非法 Task 参数；这些都会隐藏调用错误或形成未经确认的 fallback。
 
