@@ -69,7 +69,7 @@ case xhh_Event_RGB_Select_ADD:
 /* AI:硬件操作接口。Task 内所有 BSP 输出只能集中在本区域。 */
 static void xhh_Task_LED_Output_One(LED_Index_t index)
 {
-	/* AI:通过当前项目已确认的 xhh_BSP GPIO 接口完成输出。 */
+	/* AI:通过已初始化的 xhh_BSP GPIO 接口完成输出。 */
 }
 
 void xhh_Task_LED_Cmd(uint8_t cmd)
@@ -159,6 +159,7 @@ xhh_BSP_PWM1_Set_Duty(LevelToDutyCount(level));
 - ADC 使用 `xhh_BSP_ADC_CHANNEL_0..9` 逻辑槽位；厂家通道值只在 `xhh_BSP_ADC.c`，业务代码只使用 README 已登记槽位。
 - 业务参数到硬件计数值的换算仍放在 Task 私有函数中。
 - Task 不提供 `Config` 接口配置硬件初始化参数。
+- Task 注释只说明业务语义和调用时序，不重复端口、引脚、极性或厂家资源映射。
 
 ---
 

@@ -8,11 +8,11 @@ static void xhh_Task_Template_Output(void)
 {
 	if (xhh_task_template_en == 0U)
 	{
-		/* AI:复制后通过当前已确认的 BSP 接口关闭输出。 */
+		/* AI:复制后通过已确认的 BSP 接口关闭输出。 */
 		return;
 	}
 
-	/* AI:复制后通过当前已确认的 BSP 接口应用 template_obj。 */
+	/* AI:复制后通过已确认的 BSP 接口应用 template_obj。 */
 }
 
 void xhh_Task_Template_Cmd(uint8_t cmd)
