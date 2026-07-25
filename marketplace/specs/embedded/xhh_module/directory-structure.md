@@ -12,7 +12,7 @@
 ├── xhh_Module/                  # Event/Mode/Task 业务逻辑
 ├── xhh_BSP/                     # 当前 MCU 基础外设驱动
 ├── Platform/                    # 当前项目唯一 MCU 平台
-├── Components/                  # MCU 无关公共组件
+├── Components/                  # 无厂家依赖的公共组件
 ├── Project/                     # IDE 工程配置和编译输出
 └── Doc/                         # 项目资料
 ```
@@ -36,7 +36,7 @@ APP -> xhh_Module -> Components
 - `Components` 可依赖 `xhh_BSP` 的公开接口，禁止依赖 `APP`、`xhh_Module` 或 `Platform`。
 - `xhh_BSP` 可依赖 `Platform`，禁止反向依赖 `APP`、`xhh_Module` 或 `Components`。
 - `Platform` 不依赖任何上层目录。
-- `Components` 必须保持产品和 MCU 无关；纯算法组件只依赖 C 标准库和自身，LCD 等外部器件组件可通过 `xhh_BSP` 使用基础硬件能力。
+- `Components` 必须保持产品语义和厂家 SDK 无关；纯算法组件只依赖 C 标准库和自身，LCD 等外部器件组件可通过 `xhh_BSP` 使用基础硬件能力。
 
 ---
 
@@ -55,7 +55,7 @@ APP/
 ```
 
 - `main.c` 是固定入口，负责按顺序调用 BSP 初始化、Event/Task 初始触发与主循环调度。调度复杂时，可按需使用 `main_task.c/.h` 拆分调度代码；不建立 APP 硬件 Config 聚合层。
-- 多模块业务联动必须进入 `xhh_Event`，不得长期堆在 `main.c` 或协议回调中。
+- 协议入口、状态迁移和跨域业务编排必须进入 `xhh_Event`，不得长期堆在 `main.c` 或协议回调中；Task 间的单向局部协作按 Task 规范处理。
 - 厂商调度机制只留在 APP 入口适配处，不扩散到 Event/Mode/Task。
 
 ---
@@ -164,8 +164,8 @@ Components/
 └── lcd/
 ```
 
-- 仅放跨项目行为稳定、没有产品语义、没有直接 MCU 依赖的组件。
-- 纯算法组件只依赖 C 标准库和自身公开头；LCD、传感器等外部器件组件允许 include `xhh_BSP_*.h`，通过已初始化的 GPIO、SPI、I2C、Delay 等基础能力访问硬件。
+- 仅放跨项目行为稳定、没有产品语义、没有厂家 SDK 或寄存器依赖的组件。
+- 纯算法组件只依赖 C 标准库和自身公开头；LCD、传感器等外部器件组件允许 include `xhh_BSP_*.h`，通过已初始化的 GPIO、SPI、I2C、Delay 等基础能力访问硬件。器件连线需要变化时，可通过 BSP 公开的端口、引脚和电平参数适配，但不得配置 MCU 外设。
 - Components 禁止感知厂家类型、寄存器、MCU 型号以及 Task/Event/Mode 等产品状态。
 - Component 的器件初始化不等于 MCU 外设初始化；Component 不得调用厂家 API 或配置 MCU 外设、GPIO、DMA 和中断。
 - 当前项目只使用一次且抽象后更难理解的代码，不进入 `Components/`。

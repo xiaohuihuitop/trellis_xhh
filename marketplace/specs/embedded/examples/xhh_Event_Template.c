@@ -5,34 +5,44 @@
 
 #include "xhh_Event_Template.h"
 #include "xhh_Mode.h"
+#include "xhh_BSP_SYS.h"
 
 // ===== Event 私有单槽(事件值 + 参数) =====
-static xhh_Event_t xhh_event_slot = xhh_Event_Null;
-static uint32_t xhh_event_parameter_slot = xhh_Event_Parameter_ID_NULL;
+static volatile xhh_Event_t xhh_event_slot = xhh_Event_Null;
+static volatile uint32_t xhh_event_parameter_slot = xhh_Event_Parameter_ID_NULL;
 
 // ===== 触发:写私有单槽 =====
 void xhh_Event_Trigger(xhh_Event_t event, uint32_t xhh_Event_Parameter)
 {
-	xhh_event_slot = event;
+	xhh_BSP_SYS_IT_Disable();
 	xhh_event_parameter_slot = xhh_Event_Parameter;
-	XHH_DEBUG("e_t:%d\r\n", event);
+	xhh_event_slot = event;
+	xhh_BSP_SYS_IT_Enable();
 }
 
 // ===== 分发:读后清零 + switch(主循环 10ms 调) =====
 void xhh_Event_Handle(void)
 {
-	xhh_Event_t event_temp = xhh_event_slot;
-	uint32_t param = xhh_event_parameter_slot;
-	xhh_event_slot = xhh_Event_Null;          // 取出即清空，新事件留给下一轮 Handle
+	xhh_Event_t event_temp;
+	uint32_t param;
+
+	xhh_BSP_SYS_IT_Disable();
+	event_temp = xhh_event_slot;
+	param = xhh_event_parameter_slot;
+	xhh_event_slot = xhh_Event_Null;          // AI:取出即清空，新事件留给下一轮 Handle。
+	xhh_BSP_SYS_IT_Enable();
 
 	if (event_temp == xhh_Event_Null)
 		return;
 
-	// 拆参数(高16来源 / 低16数据)——从 param 提取,不是从已清零的全局
-	uint16_t data_16 = (uint16_t)(param & 0xffff);
-	uint8_t data_h = (uint8_t)((data_16 >> 8) & 0xff);
-	uint8_t data_l = (uint8_t)(data_16 & 0xff);
-	(void)data_h; (void)data_l;               // 按需用
+	// AI:从局部快照拆参数，高16只用于来源判断，低16承载业务数据。
+	uint32_t source_id = param & 0xFFFF0000UL;
+	uint16_t data_16 = (uint16_t)(param & 0x0000FFFFUL);
+	uint8_t data_h = (uint8_t)((data_16 >> 8) & 0xFFU);
+	uint8_t data_l = (uint8_t)(data_16 & 0xFFU);
+	(void)source_id;
+	(void)data_h;
+	(void)data_l;
 
 	XHH_DEBUG("e_h:%d\r\n", event_temp);
 
@@ -50,6 +60,13 @@ void xhh_Event_Handle(void)
 		// xhh_Task_LED_Set_*(...);
 		// xhh_Task_TIMEOUT_Set_*(...);
 		xhh_SYS_Change(xhh_SYS_Run);
+		break;
+
+	case xhh_Event_TimeOut:
+		if (source_id == xhh_Event_Parameter_ID_Touch)
+		{
+			// TODO: 使用 data_16、data_h 或 data_l 处理 Touch 来源的超时事件。
+		}
 		break;
 
 	case xhh_Event_ERR:

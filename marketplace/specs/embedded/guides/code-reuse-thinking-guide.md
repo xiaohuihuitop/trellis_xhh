@@ -48,7 +48,7 @@
 - 被复用的文件或模块
 - 为适配当前项目所作的硬件与接口调整
 
-禁止只因文件同名而直接覆盖当前实现；禁止把参考项目中的 `Platform`、厂家类型、真实引脚、HAL 调用带入 `xhh_Module` 或 Components。
+禁止只因文件同名而直接覆盖当前实现；禁止把参考项目中的 `Platform`、厂家类型、厂家引脚宏、HAL 调用带入 `xhh_Module` 或 Components。Task/Component 如需操作已初始化 GPIO，只能通过当前项目 `xhh_BSP_GPIO` 公开的端口、引脚和电平参数。
 
 ---
 
@@ -57,7 +57,7 @@
 | 已有模块 | 负责的行为 | 扩展方式 |
 |----------|-----------|----------|
 | `xhh_Task_Flash` | 所有 Flash 读写 | 加字段进结构体，不要散写 Flash |
-| `xhh_Event` | 多模块联动 | 加事件枚举 + case，不要跨 Task 直调 |
+| `xhh_Event` | 协议入口、状态迁移或跨域编排 | 加事件枚举 + case，集中协调多模块副作用 |
 | `xhh_Mode` | 系统状态 | 加状态枚举 + Change，不要另建状态机 |
 | `xhh_Task_<X>` | 单一功能域 | 加 `_Cmd/_Loop/_Set_*` / `_Apply_*`，不要在 main_task 堆逻辑 |
 | `xhh_BSP_Flash_Read/Write/Erase` | Flash 原语(BSP 层) | 经 `xhh_Task_Flash` 调,不另封装 |

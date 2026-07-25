@@ -23,18 +23,20 @@ typedef enum
 } xhh_Event_t;
 
 // ===== 事件参数 ID(高 16bit 来源 / 低 16bit 数据) =====
-#define xhh_Event_Parameter_ID_NULL  0x00000000
-#define xhh_Event_Parameter_ID_BLE   0x11110000
-#define xhh_Event_Parameter_ID_Touch 0x22220000
-#define xhh_Event_Parameter_ID_Key   0x33330000
+#define xhh_Event_Parameter_ID_NULL  0x00000000UL
+#define xhh_Event_Parameter_ID_BLE   0x11110000UL
+#define xhh_Event_Parameter_ID_Touch 0x22220000UL
+#define xhh_Event_Parameter_ID_Key   0x33330000UL
 
 // ===== 接口 =====
-/// @brief 触发事件(写 Event 私有单槽，新事件覆盖未处理的旧事件)
+/// @brief 触发事件（临界区写 Event 私有单槽，新事件覆盖未处理的旧事件）
 /// @param event 事件枚举值
-/// @param xhh_Event_Parameter 参数(高16来源ID / 低16数据)
+/// @param xhh_Event_Parameter 参数（高16来源ID / 低16数据）
+/// @note AI:可从主循环或 ISR 调用；函数内不得添加日志、业务调用或阻塞操作。
 void xhh_Event_Trigger(xhh_Event_t event, uint32_t xhh_Event_Parameter);
 
-/// @brief 分发事件(主循环 10ms 调:取出即清零 + 提取参数 + switch)
+/// @brief 分发事件（主循环 10ms 调用：临界区取出清槽、拆分参数后 switch）
+/// @note AI:来源判断只比较参数高16bit，低16bit可携带业务数据。
 void xhh_Event_Handle(void);
 
 #endif

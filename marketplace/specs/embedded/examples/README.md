@@ -11,7 +11,7 @@
 | `xhh_BSP_Template.c/.h` | BSP 公共层骨架（按当前类别补充硬件接口） | `Template/TEMPLATE` → 类别名，文件名 → 对应 `xhh_BSP_<类别>.c/.h` |
 | `xhh_Task_All_Template.h` / `.c` | 聚合层骨架（聚合 include + 转发各模块 Cmd） | 文件名 → `xhh_Task_ALL.h` / `xhh_Task.c`，按需增减 Task 头和 Cmd 转发 |
 | `xhh_Task_Template.h` | Task 模块头文件（Cmd/Loop + 类型 + 宏） | `Template` → 你的模块名（如 `Temp`） |
-| `xhh_Task_Template.c` | Task 模块实现（无 Init/DeInit + 调 `xhh_BSP_*` + Loop 守卫） | 同上 + 填业务逻辑和换算；真实硬件资源只填入 BSP |
+| `xhh_Task_Template.c` | Task 模块实现（无 Init/DeInit + 调 `xhh_BSP_*` + Loop 守卫） | 同上 + 填业务逻辑和换算；硬件初始化和厂家映射只在 BSP，Task 可通过 BSP 公开 GPIO 参数操作已初始化资源 |
 | `xhh_Event_Template.h` | 事件枚举 + 参数 ID 宏 | 加你的事件值 |
 | `xhh_Event_Template.c` | Trigger + Handle switch 骨架 | 加你的事件 case |
 | `xhh_Mode_Template.h` | 状态机头(状态/子步枚举 + 变量 extern + 接口) | 加你的状态枚举值 |
@@ -24,7 +24,7 @@
 
 1. BSP 骨架复制到根目录 `xhh_BSP/`；Task/Event/Mode 骨架分别复制到 `xhh_Module/` 对应子目录
 2. 全局替换 `Template` / `TEMPLATE` 为你的模块名
-3. 在 BSP 填真实硬件资源，在 Task 填业务枚举、Loop 处理和状态转换
+3. 在 BSP 填硬件初始化和厂家资源映射；在 Task 填业务枚举、Loop 处理、状态转换，以及通过 BSP 接口进行的运行期硬件操作
 4. 新 Task 模块注册到 `xhh_Task_ALL.h`；需要统一使能时在 `xhh_Task.c` 增加 Cmd 转发
 
 ---

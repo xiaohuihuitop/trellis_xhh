@@ -171,7 +171,7 @@ static uint32_t xhh_Task_BAT_Charge_MARK(uint32_t voltage_mv)
 - [ ] 项目根 `README.md` 是否列出当前 MCU、板卡版本、硬件资料路径、已启用基础外设和硬件限制？
 - [ ] 本次是否修改了 MCU、板卡、引脚、ADC 映射、外设实例、Timer/DMA、时钟、Flash 分区或调试/唤醒约束？若是，README、Project 和对应 `xhh_BSP_*.c` 是否已同步核对更新？
 - [ ] `xhh_Module/` 是否只依赖 `xhh_BSP/` 和 `Components/`，没有直接依赖 `Platform/`？
-- [ ] `Components/` 是否保持产品和 MCU 无关；如需硬件能力，是否只 include `xhh_BSP/` 公共头，没有 include `main.h`、`xhh_Module/` 或厂商头？
+- [ ] `Components/` 是否保持产品语义和厂家 SDK 无关；如需硬件能力，是否只 include `xhh_BSP/` 公共头，没有 include `main.h`、`xhh_Module/` 或厂商头？
 - [ ] ADC 公开头是否完整声明 `xhh_BSP_ADC_CHANNEL_0..9`？README 已登记槽位是否均在 `xhh_BSP_ADC.c` 映射到厂家硬件通道，未登记槽位是否明确报错而非猜测映射？
 - [ ] 占位函数是否均在函数体内使用 `AI:` 注释说明原因、当前行为和启用条件，并且没有默认成功、伪造硬件值或静默 fallback？
 - [ ] 改动是否尊重现有模块边界？
@@ -181,8 +181,9 @@ static uint32_t xhh_Task_BAT_Charge_MARK(uint32_t voltage_mv)
 - [ ] 是否残留调试代码 / 测试 hook？
 - [ ] 新代码缩进是否 Tab？缩写词是否全大写？
 - [ ] 是否残留文件头注释（应删）？
-- [ ] 中断里是否做了禁止的事（协议/事件/Flash）？
+- [ ] 中断里是否做了禁止的事（协议解析/Event Handle/Flash），以及 ISR 内的 Event Trigger 是否只写入已构造参数？
 - [ ] Task 内是否残留厂商 API 直接调用（`GPIOA_ModeCfg`/`HAL_*` 等，应改 `xhh_BSP_*`）？
+- [ ] Task 直接调用其他 Task 时，是否仅为单向局部协作，没有反向调用、递归、系统状态切换或跨域副作用分散？
 - [ ] Task 函数定义是否遵循“硬件操作接口（`AI:硬件操作接口` 标注）→ Cmd → 其他公开接口 → Loop”的顺序，且 Loop 为文件最后一个函数定义？
 - [ ] 参数型 Task 的 `_Set_*` 是否只更新私有参数，没有隐藏调用 `_Set_Mode_Fun`、`_Apply_*`、目标更新函数或硬件接口？需要即时生效的 Event 是否显式执行“Set 参数 → Mode/Apply”？
 - [ ] 周期 Task 是否只在效果相位或目标值变化时更新输出，未在每个周期重复写相同硬件值？

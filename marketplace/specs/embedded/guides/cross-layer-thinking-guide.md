@@ -39,11 +39,11 @@
 
 **预防**：协议层只 `xhh_Event_Trigger`，多模块联动在事件 case 内协调。
 
-### Bug 3：Task 间直接互调
+### Bug 3：Task 间形成反向调用或递归
 
-**症状**：`xhh_Task_Motor_Loop` 内直接调 `xhh_Task_LED_Set_*`，耦合 + 难调度。
+**症状**：`xhh_Task_Motor_Loop` 调 `xhh_Task_LED_Set_*`，而 LED 又反向调用 Motor，形成递归、重入或难以追踪的时序。
 
-**预防**：Task 间通过事件或状态机协调，不直接互调。
+**预防**：允许单向 Task 调用完成局部业务更新；禁止反向调用和递归。协议入口、状态迁移或多个 Task 的集中编排必须通过 Event 或状态机协调。
 
 ### Bug 4：关机路径漏存 Flash
 

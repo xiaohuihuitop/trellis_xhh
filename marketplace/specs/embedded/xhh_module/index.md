@@ -66,8 +66,8 @@
 - [ ] **命名**：新标识符加 `xhh_` 前缀、缩写词全大写（LED/ADC/BLE）、类型 `_t` 后缀——见 [naming-conventions.md](./naming-conventions.md)
 - [ ] **若是新 Task 模块**：只规划真实需要的 `_Cmd/_Loop/Get/Set`，使用私有状态和 Loop 守卫，并注册 `xhh_Task_ALL.h`——见 [task-module.md](./task-module.md)
 - [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine.md](./state-machine.md)
-- [ ] **若是多模块联动**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task——见 [event-system.md](./event-system.md)
-- [ ] **涉及中断**：中断只做清标志/计数/轻量输出，不做协议/事件/Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
+- [ ] **若是协议入口、状态迁移或跨域编排**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task；Task 间局部更新允许单向调用——见 [event-system.md](./event-system.md)
+- [ ] **涉及中断**：中断只做清标志/计数/轻量输出或受限 Event Trigger，不做协议、Event Handle 或 Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
 - [ ] **涉及硬件操作**：Task 不直接调厂商 API 或寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
 - [ ] **涉及硬件事实**：先阅读项目根 `README.md` 的 MCU、板卡、硬件资料和限制；硬件信息与原理图、Project 或 BSP 冲突时先核对，不按猜测修改——见 [directory-structure.md](./directory-structure.md)
 - [ ] **涉及 ADC**：上层只使用 README 已登记的 `xhh_BSP_ADC_CHANNEL_0..9` 逻辑槽位，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
@@ -90,12 +90,12 @@
 - [ ] **构建产物**：MCU 代码提交已包含本次全量编译生成的 `.hex` / `.bin`
 - [ ] **产物生成**：`.hex` / `.bin` 产出 + post-build CRC 通过
 - [ ] **格式**：Tab 缩进、缩写词全大写、无文件头注释、`.clang-format` 无报错——见 [quality.md](./quality.md) Review Checklist
-- [ ] **分层链路**：改动是否走了 协议→事件→状态机→Task 链路，有没有绕过事件层直接跨模块调
+- [ ] **分层链路**：协议入口、状态迁移和跨域编排是否走了 协议→事件→状态机→Task 链路；Task 局部协作是否保持单向、无调用环
 - [ ] **状态一致性**：事件 case 内多模块联动是否一次性设置完，没有状态改一半
 - [ ] **守卫**：Task `_Loop` 首句 `if (en == 0) return;` 在；参数 `if (NULL) return` 在
 - [ ] **Task 函数顺序**：硬件操作接口以 `AI:硬件操作接口` 标注并置顶，随后 Cmd、其他公开接口，Loop 为文件最后一个函数定义——见 [task-module.md](./task-module.md)
 - [ ] **参数与输出分离**：参数型 `_Set_*` 只改私有状态；需要即时生效时，Event 显式执行 Set 参数后再调用 Mode/Apply；Loop 不重复写未变化的输出——见 [task-module.md](./task-module.md)
-- [ ] **中断禁区**：中断里没有协议解析/事件触发/Flash 读写
+- [ ] **中断禁区**：中断里没有协议解析/Event Handle/Flash 读写；如 Trigger Event，是否只写入已构造的事件与参数
 - [ ] **持久化**：Flash 读写经 `xhh_Task_Flash`，没散写 `xhh_BSP_Flash_Write`；新字段加了 `IS_Valid` + `Clean` 默认值 + 双向 `Update`
 - [ ] **路径审查**：涉及协议/状态机/持久化的改动，确认完整读写链路而非只看单函数
 - [ ] **TODO 注释**：遗留 TODO 以 `//TODO` 或 `// TODO` 作为单行注释的第一个词，便于 grep
