@@ -45,8 +45,7 @@ trellis_spec/
 │           ├── .clang-format                   # 格式配置(部署到项目根)
 │           ├── README.md
 │           ├── xhh_module/                      # xhh_Module 业务层规范(11 个 .md)
-│           └── guides/                         # 思考指南(6 个 .md)
-│           └── examples/                       # 代码骨架(8 个 .c/.h,部署后移到 .trellis/examples/)
+│           └── guides/                          # 思考指南(6 个 .md)
 ├── .gitignore
 └── README.md
 ```
@@ -71,9 +70,9 @@ trellis init --registry gh:<你的账号>/<你的仓库名>/marketplace --templa
 
 初始化后:
 1. 把模板根的 `.clang-format` 复制到项目根目录
-2. 把 `examples/` 从 `.trellis/spec/` 移到 `.trellis/examples/`(在 `.trellis` 但不在 `spec` 下,不被 Trellis 当 spec 层扫)
-3. 把 xhh_module/guides 里"项目事实占位"换成真实值
-3. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
+2. 把 xhh_module/guides 里"项目事实占位"换成真实值
+3. 确认 `D:\workspace\xhh_项目参考` 中可用的参考 Demo，按复用规范复制所需文件
+4. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
 
 ## 维护约定
 
@@ -89,4 +88,4 @@ trellis init --registry gh:<你的账号>/<你的仓库名>/marketplace --templa
 - `marketplace/index.json` 的 `templates/path` 是否指向正确目录（相对仓库根，不是 `index.json` 所在目录）
 - 每个模板目录内是否至少包含 `README.md` 和需要暴露的规范文件
 - 模板内容里是否带入了某个私有仓库独有的路径、域名、客户信息或任务状态
-- `path` 指向的目录里除了真正想作为 spec layer 的子目录（本仓库是 `xhh_module/`、`guides/`）外，是否还混入了 `examples/`、`.clang-format` 这类**辅助资源**——若有，必须在模板 README 的"部署后必须步骤"里明确写清移动/复制动作，否则 Trellis 会把它们误识别成一层 spec layer（见下方"部署后必须步骤"）。
+- `path` 指向的目录是否只包含真正的 spec layer 子目录（本仓库是 `xhh_module/`、`guides/`），没有混入代码骨架或其他目录型辅助资源；`.clang-format` 是文件，不参与 layer 识别，但仍须按模板 README 复制到项目根目录。

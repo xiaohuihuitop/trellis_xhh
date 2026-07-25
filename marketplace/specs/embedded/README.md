@@ -34,14 +34,6 @@
 embedded/
 ├── .clang-format                 # ⚠ 辅助资源：部署到项目根目录（不是 spec layer）
 ├── README.md                     # 本文件
-├── examples/                     # ⚠ 辅助资源：部署后必须移出 spec 层
-│   ├── README.md
-│   ├── xhh_BSP_Template.c/.h     # BSP 公共层骨架(GPIO 示例类别)
-│   ├── xhh_Task_All_Template.c/.h # 聚合层骨架
-│   ├── xhh_Task_Template.c/.h
-│   ├── xhh_Event_Template.c/.h
-│   ├── xhh_Mode_Template.c/.h
-│   └── xhh_Task_Flash_Template.c
 ├── xhh_module/                   # ✅ spec layer：xhh_Module 业务层规范(11 个 .md)
 │   ├── index.md                  # 索引 + Pre-Dev Checklist + Quality Check
 │   ├── naming-conventions.md     # 命名约定
@@ -64,7 +56,7 @@ embedded/
     └── cross-layer-thinking-guide.md      # 跨层链路
 ```
 
-> **为什么 `examples/` 和 `.clang-format` 在模板里**：它们必须跟着 `trellis init --registry` 一起被复制下来，所以只能放在 `path` 指向的 `embedded/` 目录内。但 Trellis 会把 `embedded/` 的每个直接子目录都当作一层 spec layer 扫描，所以 init 之后这俩必须按下方"部署后必须步骤"手动搬走，否则你 `Spec layers` 列表会从预期的 `xhh_module`、`guides` 变成多出 `examples` 一层（`.clang-format` 是文件不是目录，不影响 layer 计数，但会留在 `spec/` 里没用）。
+> `.clang-format` 是随模板部署的格式配置文件，不参与 spec layer 识别；初始化后复制到项目根目录，再从 `.trellis/spec/embedded/` 移除即可。代码复用统一从 `D:\workspace\xhh_项目参考` 中的真实参考 Demo 获取，不再维护独立代码骨架。
 
 ## 不直接包含的内容
 
@@ -78,7 +70,7 @@ embedded/
 trellis init --registry <仓库地址> --template embedded
 ```
 
-初始化后（**必须执行前 2 步**，否则 spec layer 列表错乱）：
+初始化后：
 
 1. **复制 `.clang-format` 到项目根目录**
    ```powershell
@@ -87,19 +79,13 @@ trellis init --registry <仓库地址> --template embedded
    ```
    不做这一步：`.clang-format` 留在 `.trellis/spec/embedded/` 内没人引用，clang-format 在项目根跑不到它。
 
-2. **把 `examples/` 移出 spec 层**（关键）
-   ```powershell
-   Move-Item .trellis\spec\embedded\examples .trellis\examples
-   ```
-   不做这一步：`embedded/examples/` 会被 Trellis 当成第三层 spec layer 扫描，`Spec layers` 列表会多出 `examples`，污染识别；实测移走后 `Spec layers: xhh_module, guides`（各层都还含 README/index 与若干 .md，识别正常）。
+2. 在项目根 `README.md` 建立或更新硬件事实清单：MCU、板卡版本、硬件资料路径、已启用 BSP 能力和硬件限制；与原理图、Project 和 BSP 实现核对后再开始开发。
 
-3. 在项目根 `README.md` 建立或更新硬件事实清单：MCU、板卡版本、硬件资料路径、已启用 BSP 能力和硬件限制；与原理图、Project 和 BSP 实现核对后再开始开发。
+3. 把 `xhh_module/` 与 `guides/` 里"项目事实占位"换成真实值（地址、结构体名、事件清单等）。
 
-4. 把 `xhh_module/` 与 `guides/` 里"项目事实占位"换成真实值（地址、结构体名、事件清单等）。
+4. 确认 `D:\workspace\xhh_项目参考` 中可用的参考项目，并按 `guides/code-reuse-thinking-guide.md` 的规则登记复用来源；该目录可以包含多个独立项目，且只作为复制和检索来源。
 
-5. 确认 `D:\workspace\xhh_项目参考` 中可用的参考项目，并按 `guides/code-reuse-thinking-guide.md` 的规则登记复用来源；该目录可以包含多个独立项目，且只作为复制和检索来源。
-
-6. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换。
+5. `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换。
 
 ## 维护约定
 

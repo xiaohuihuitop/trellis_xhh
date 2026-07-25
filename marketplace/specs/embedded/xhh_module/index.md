@@ -43,18 +43,9 @@
 |------|------|
 | [质量规范](./quality.md) | 格式（Tab/.clang-format/无文件头）、验证、提交、Review 清单 |
 
-### 示例代码骨架（直接套用）
+### 参考 Demo
 
-新建模块时复制 `.trellis/examples/` 下对应骨架,改名填逻辑即可。spec 不放代码文件,骨架代码统一在 `.trellis/examples/`（**注意不是** `.trellis/spec/embedded/examples/`——init 落地后必须按 `embedded/README.md` 的"部署后必须步骤"第 2 步把 `examples/` 移到 `.trellis/examples/`，否则 Trellis 会把它误算成一层 spec layer）。
-
-| 骨架 | 用途 |
-|------|------|
-| `xhh_BSP_Template.c/.h` | BSP 公共层骨架（按当前类别补充已确认的硬件接口） |
-| `xhh_Task_All_Template.h/.c` | 聚合层骨架（聚合 include + 转发各模块 Cmd） |
-| `xhh_Task_Template.c/.h` | Task 按需 Cmd/Loop/Get/Set 模板 |
-| `xhh_Event_Template.c/.h` | 事件枚举 + Trigger + Handle 骨架 |
-| `xhh_Mode_Template.c/.h` | 状态机枚举 + Change + Handle 骨架(.h 放枚举定义,.c 放实现) |
-| `xhh_Task_Flash_Template.c` | Flash 结构体 + Get/Save/IS_Valid/Clean 骨架 |
+新建或扩展模块时，优先从 `D:\workspace\xhh_项目参考` 中职责和硬件条件最接近的真实参考 Demo 复制所需文件，再按当前项目的 BSP、Components、README 和原理图做最小调整。不要复制参考 Demo 的 `.git`、`.trellis` 或开发工具配置。
 
 ---
 
@@ -78,7 +69,7 @@
 - [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
 - [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
 - [ ] **新建文件**：使用 UTF-8 无 BOM，无文件头注释，Tab 缩进，`XHH_<MODULE>_H` 头文件保护
-- [ ] **要套骨架**：从 `.trellis/examples/` 复制对应骨架，全局替换 `Template` → 模块名
+- [ ] **要复用参考代码**：从 `D:\workspace\xhh_项目参考` 选择职责和硬件条件最接近的 Demo，仅复制当前需要的文件，并登记来源
 
 ---
 
