@@ -56,7 +56,7 @@ embedded/
     └── cross-layer-thinking-guide.md      # 跨层链路
 ```
 
-> `.clang-format` 是随模板部署的格式配置文件，不参与 spec layer 识别；初始化后复制到项目根目录，再从 `.trellis/spec/embedded/` 移除即可。代码复用统一从 `D:\workspace\xhh_项目参考` 中的真实参考 Demo 获取，不再维护独立代码骨架。
+> `.clang-format` 是随模板部署的格式配置文件，不参与 spec layer 识别；Trellis 会将模板根文件部署到 `.trellis/spec/`，初始化后复制到项目根目录，再从 `.trellis/spec/.clang-format` 移除即可。代码复用统一从 `D:\workspace\xhh_项目参考` 中的真实参考 Demo 获取，不再维护独立代码骨架。
 
 ## 不直接包含的内容
 
@@ -74,10 +74,9 @@ trellis init --registry <仓库地址> --template embedded
 
 1. **复制 `.clang-format` 到项目根目录**
    ```powershell
-   Copy-Item .trellis\spec\embedded\.clang-format .\.clang-format
-   Remove-Item .trellis\spec\embedded\.clang-format
+   Move-Item .trellis\spec\.clang-format .\.clang-format
    ```
-   不做这一步：`.clang-format` 留在 `.trellis/spec/embedded/` 内没人引用，clang-format 在项目根跑不到它。
+   不做这一步：`.clang-format` 留在 `.trellis/spec/` 内没人引用，clang-format 在项目根跑不到它。
 
 2. 在项目根 `README.md` 建立或更新硬件事实清单：MCU、板卡版本、硬件资料路径、已启用 BSP 能力和硬件限制；与原理图、Project 和 BSP 实现核对后再开始开发。
 
