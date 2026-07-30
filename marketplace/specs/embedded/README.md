@@ -15,7 +15,7 @@
 - Task、Event、状态机、BSP、Flash、日志与异常处理的接口模式；
 - 命名、注释、编码和格式等源码规则。
 
-以下内容不属于 Spec，由全局 `xhh-mcu-development` Skill 和当前任务文档处理：
+以下内容不属于 Spec，由当前任务选择的领域 Skill 和任务文档处理：
 
 - README、Doc、原理图、数据手册中的项目与板级事实；
 - 参考 Demo 选择、复用差异与新板迁移；

@@ -2,7 +2,7 @@
 
 本目录约束 `APP/`、`xhh_Module/`、`xhh_BSP/`、`Platform/` 与 `Components/` 的代码边界和接口模式。
 
-项目硬件事实、Demo 复用、构建和实物验证不在本索引重复定义，由全局 `xhh-mcu-development` Skill 与当前任务文档处理。
+项目硬件事实、Demo 复用、构建和实物验证不在本索引重复定义，由当前任务选择的领域 Skill 与任务文档处理。
 
 ## 规范索引
 
