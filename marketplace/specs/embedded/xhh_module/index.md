@@ -1,106 +1,43 @@
-# xhh_Module 开发规范
+# XHH 源码模式索引
 
-> 这里的 "xhh_module" 主要约束 `xhh_Module/` 业务层(Event/Mode/Task)，并定义它与根目录 `APP/`、`xhh_BSP/`、`Platform/`、`Components/` 的边界。
+本目录约束 `APP/`、`xhh_Module/`、`xhh_BSP/`、`Platform/` 与 `Components/` 的代码边界和接口模式。
 
----
-
-## 概述
-
-- 工程以 C 语言为主
-- 固定工程结构：五个源码目录 `APP/`、`xhh_Module/`、`xhh_BSP/`、`Platform/`、`Components/`，外加 `Project/`、`Doc/` 两个辅助目录
-- 核心控制流：协议入口 → 事件分发 → 系统状态机 → 功能 Task 模块/Components → xhh_BSP 公共层
-- 重视可控性、可验证性、板级调试，而不是抽象层层封装
-- 每个项目只有一个 MCU 平台，厂商层全部收口到根目录 `Platform/`
-- 硬件操作集中在根目录 `xhh_BSP/`，Task 和 Components 不直接碰厂商 API
-
----
+项目硬件事实、Demo 复用、构建和实物验证不在本索引重复定义，由全局 `xhh-mcu-development` Skill 与当前任务文档处理。
 
 ## 规范索引
 
-### 模式规范（怎么写代码）
+| 文档 | 约束范围 |
+|------|----------|
+| [目录结构](./directory-structure.md) | 顶层目录职责和依赖方向 |
+| [BSP 公共层](./bsp.md) | 基础外设能力、公开接口和初始化归属 |
+| [Task 模块模式](./task-module.md) | Cmd/Loop、私有状态、函数顺序和局部协作 |
+| [事件系统](./event-system.md) | 单槽 Event、参数编码、Trigger 与 Handle |
+| [状态机模式](./state-machine.md) | 状态、子步和集中转换 |
+| [中断与关键码](./interrupt.md) | ISR 可做与禁止做的源码边界 |
+| [Flash 持久化](./flash.md) | Flash 接口、数据校验和运行时同步 |
+| [异常与边界处理](./error-handling.md) | 参数边界、错误处理和占位接口 |
+| [日志规范](./logging.md) | `XHH_PRINTF`、`XHH_DEBUG` 与编译开关 |
+| [命名约定](./naming-conventions.md) | 标识符、类型、文件和头保护宏 |
+| [质量规范](./quality.md) | 源码格式、编码、注释和静态检查 |
 
-| 文档 | 说明 |
-|------|------|
-| [命名约定](./naming-conventions.md) | xhh_ 前缀、缩写词全大写、_t 后缀、头文件保护宏 |
-| [Task 模块模式](./task-module.md) | 按需 Cmd/Loop、使能位守卫、ALL Cmd 聚合、调 `xhh_BSP_*` |
-| [状态机模式](./state-machine.md) | 枚举+子步+计数+switch、集中转换 |
-| [事件系统](./event-system.md) | Event 私有单槽、参数编码、Trigger/Handle |
-| [中断与关键码](./interrupt.md) | 跨平台原则、时敏输出/安全关断例外 |
-| [BSP 公共层](./bsp.md) | BSP 简洁原则、SYS 集中初始化、Timer/PWM/IWDG/SPI/ADC 接口和平台隔离 |
+## 编码前检查
 
-### 边界规范（各层怎么处理）
+- [ ] 改动所在目录符合 [目录结构](./directory-structure.md) 的职责和依赖方向。
+- [ ] 新标识符遵守 [命名约定](./naming-conventions.md)。
+- [ ] 新 Task 只提供真实需要的接口，状态私有，周期逻辑遵守 [Task 模块模式](./task-module.md)。
+- [ ] 状态迁移只通过 [状态机模式](./state-machine.md) 的集中接口完成。
+- [ ] 协议入口、状态迁移和跨域编排遵守 [事件系统](./event-system.md)；Task 局部协作保持单向且无调用环。
+- [ ] Task 和 Components 只使用 `xhh_BSP_*` 公开接口，不直接依赖厂家 API、寄存器或 `Platform/`。
+- [ ] ISR、Flash、日志和错误处理分别阅读对应规范，避免跨层复制实现。
+- [ ] 新建或编辑源码符合 [质量规范](./quality.md) 的编码、格式和注释要求。
 
-| 文档 | 说明 |
-|------|------|
-| [目录结构](./directory-structure.md) | 五个源码目录、Project/Doc 辅助目录、单 MCU 平台和依赖方向 |
-| [Flash 持久化](./flash.md) | 结构体直存、校验、默认值、集中模块 |
-| [异常与边界处理](./error-handling.md) | guard early、返回码、状态切换、无 assert |
-| [日志规范](./logging.md) | XHH_PRINTF / XHH_DEBUG 宏、XHH_DEBUG_EN 编译期开关 |
+## 源码检查
 
-### 工程规范
-
-| 文档 | 说明 |
-|------|------|
-| [质量规范](./quality.md) | 格式（Tab/.clang-format/无文件头）、验证、提交、Review 清单 |
-
-### 参考 Demo
-
-新建或扩展模块时，优先从 `D:\workspace\xhh_项目参考` 中职责和硬件条件最接近的真实参考 Demo 复制所需文件，再按当前项目的 BSP、Components、README 和原理图做最小调整。不要复制参考 Demo 的 `.git`、`.trellis` 或开发工具配置。
-
----
-
-## Pre-Development Checklist（动手前必读）
-
-写任何固件代码前，按顺序确认：
-
-- [ ] **定位改动落哪一层**：读 [../guides/protocol-event-state-task-flow.md](../guides/protocol-event-state-task-flow.md) 的决策树，确认这段逻辑该放协议/事件/状态机/Task/中断哪一层
-- [ ] **命名**：新标识符加 `xhh_` 前缀、缩写词全大写（LED/ADC/BLE）、类型 `_t` 后缀——见 [naming-conventions.md](./naming-conventions.md)
-- [ ] **若是新 Task 模块**：只规划真实需要的 `_Cmd/_Loop/Get/Set`，使用私有状态和 Loop 守卫，并注册 `xhh_Task_ALL.h`——见 [task-module.md](./task-module.md)
-- [ ] **若是新状态/状态转换**：只通过 `xhh_SYS_Change()` 切换，不直接改 `xhh_SYS_n`——见 [state-machine.md](./state-machine.md)
-- [ ] **若是协议入口、状态迁移或跨域编排**：走事件层（`xhh_Event_Trigger` + 事件 case 内集中设置），不在协议层直调各 Task；Task 间局部更新允许单向调用——见 [event-system.md](./event-system.md)
-- [ ] **涉及中断**：中断只做清标志/计数/轻量输出或受限 Event Trigger，不做协议、Event Handle 或 Flash——见 [interrupt.md](./interrupt.md) 和 [../guides/isr-vs-main-loop.md](../guides/isr-vs-main-loop.md)
-- [ ] **涉及硬件操作**：Task 不直接调厂商 API 或寄存器，集中走 `xhh_BSP_*` 公共层——见 [bsp.md](./bsp.md)
-- [ ] **涉及硬件事实**：先阅读项目根 `README.md` 的 MCU、板卡、硬件资料和限制；硬件信息与原理图、Project 或 BSP 冲突时先核对，不按猜测修改——见 [directory-structure.md](./directory-structure.md)
-- [ ] **涉及 ADC**：上层只使用 README 已登记的 `xhh_BSP_ADC_CHANNEL_0..9` 逻辑槽位，硬件通道值只在当前 MCU 的 `xhh_BSP_ADC.c` 中映射——见 [bsp.md](./bsp.md)
-- [ ] **涉及 Components 硬件访问**：Components 只调用 `xhh_BSP_*`，不包含 `main.h`、产品层或厂家头——见 [directory-structure.md](./directory-structure.md)
-- [ ] **涉及延时**：统一调用 `xhh_BSP_Delay_ms`；厂家延时接口只允许出现在 `xhh_BSP_SYS.c` 的平台适配实现中——见 [bsp.md](./bsp.md)
-- [ ] **涉及关机、Sleep、Shutdown 或显示外设**：确认显示控制器、背光和通信接口均按数据手册完整关断；`Display Off` 不等于 `Sleep In`——见 [bsp.md](./bsp.md)
-- [ ] **存在占位函数**：确认占位是为了框架统一，函数体内有 `AI:` 注释说明原因、当前行为和启用条件，且未返回默认成功或伪造硬件值——见 [error-handling.md](./error-handling.md)
-- [ ] **涉及 Flash**：走 `xhh_Task_Flash` 集中模块，不加单字段 Save 接口，结构体直存 + 校验——见 [flash.md](./flash.md)
-- [ ] **编辑已有 .c/.h**：确认文件编码是 UTF-8（非 UTF-8 先转码），见 [quality.md](./quality.md) 文件编码章节
-- [ ] **新建文件**：使用 UTF-8 无 BOM，无文件头注释，Tab 缩进，`XHH_<MODULE>_H` 头文件保护
-- [ ] **要复用参考代码**：从 `D:\workspace\xhh_项目参考` 选择职责和硬件条件最接近的 Demo，仅复制当前需要的文件，并登记来源
-
----
-
-## Quality Check（完成后必验）
-
-代码写完，提交前逐项确认：
-
-- [ ] **编译通过**：使用当前项目实际 IDE 或构建系统全量编译，无错无警告
-- [ ] **构建产物**：MCU 代码提交已包含本次全量编译生成的 `.hex` / `.bin`
-- [ ] **产物生成**：`.hex` / `.bin` 产出 + post-build CRC 通过
-- [ ] **格式**：Tab 缩进、缩写词全大写、无文件头注释、`.clang-format` 无报错——见 [quality.md](./quality.md) Review Checklist
-- [ ] **分层链路**：协议入口、状态迁移和跨域编排是否走了 协议→事件→状态机→Task 链路；Task 局部协作是否保持单向、无调用环
-- [ ] **状态一致性**：事件 case 内多模块联动是否一次性设置完，没有状态改一半
-- [ ] **守卫**：Task `_Loop` 首句 `if (en == 0) return;` 在；参数 `if (NULL) return` 在
-- [ ] **Task 函数顺序**：硬件操作接口以 `AI:硬件操作接口` 标注并置顶，随后 Cmd、其他公开接口，Loop 为文件最后一个函数定义——见 [task-module.md](./task-module.md)
-- [ ] **参数与输出分离**：参数型 `_Set_*` 只改私有状态；需要即时生效时，Event 显式执行 Set 参数后再调用 Mode/Apply；Loop 不重复写未变化的输出——见 [task-module.md](./task-module.md)
-- [ ] **中断禁区**：中断里没有协议解析/Event Handle/Flash 读写；如 Trigger Event，是否只写入已构造的事件与参数
-- [ ] **持久化**：Flash 读写经 `xhh_Task_Flash`，没散写 `xhh_BSP_Flash_Write`；新字段加了 `IS_Valid` + `Clean` 默认值 + 双向 `Update`
-- [ ] **路径审查**：涉及协议/状态机/持久化的改动，确认完整读写链路而非只看单函数
-- [ ] **TODO 注释**：遗留 TODO 以 `//TODO` 或 `// TODO` 作为单行注释的第一个词，便于 grep
-- [ ] **调试残留**：没有遗留的 `XHH_DEBUG` 高频日志、测试 hook、编译开关忘关
-- [ ] **低功耗实测**：涉及低功耗或显示外设时，已对比冷上电自动休眠与开机后关机的稳定电流；已验证唤醒后显示恢复——见 [quality.md](./quality.md)
-
----
-
-## 使用建议
-
-- 初始化到具体项目后，把"项目事实占位"换成真实值（地址、结构体名、事件清单等）
-- `xhh_` 前缀是作者通用前缀，跨项目通用，不需要换
-- 每个文件的真实代码示例可替换为目标仓库的等价示例
-
----
-
-**语言**：说明文档用中文。
+- [ ] 没有反向依赖、循环依赖或 Task 内硬件初始化。
+- [ ] Event、状态机和 Task 的调用顺序不会形成半更新状态。
+- [ ] Task 私有状态未暴露为可写全局变量，`_Loop` 有使能守卫。
+- [ ] Task 函数顺序符合“硬件操作接口 → Cmd → 其他公开接口 → Loop”。
+- [ ] 参数型 `_Set_*` 只更新私有状态；需要输出时由明确的 Apply/Mode 接口执行。
+- [ ] 中断中未执行协议解析、Event Handle、Flash 读写或普通 Task Loop。
+- [ ] Flash 数据经集中模块读写，新增字段具备有效性校验和默认清理。
+- [ ] 公开头未泄露厂家类型，源码未保留无说明的占位、调试或兜底逻辑。

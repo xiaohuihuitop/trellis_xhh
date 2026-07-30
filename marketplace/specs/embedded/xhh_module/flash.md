@@ -1,6 +1,6 @@
 # Flash 持久化规范
 
-> 固件没有数据库。持久化 = Flash 结构体直存 + 字段校验 + 无效清默认值。集中在一个模块 `xhh_Task_Flash`,不分散写。
+> 持久化集中在一个模块 `xhh_Task_Flash`：Flash 结构体直存、字段校验与运行时对象同步均由该模块管理，不分散写。
 
 ---
 
@@ -23,22 +23,19 @@
 ## 存储模式:结构体直存
 
 - 用一个集中结构体承载所有用户配置/运行记忆
-- 全局唯一运行副本 `g_xhh_user_data`
-- 地址用宏定义,不硬编码数字
+- 全局唯一运行副本可按实际模块需要定义
+- 地址用项目宏定义，不在通用规范中提供示例地址
+
+当前项目在 `xhh_Task_Flash.h` 中定义 `XHH_TASK_FLASH_USER_DATA_ADDRESS`，其值必须是已确认的 Flash 绝对地址；通用规范不提供具体数值。
 
 ```c
 // xhh_Module/xhh_Task/xhh_Task_Flash.h
-// 当前项目 Flash 数据绝对地址。切换 MCU 时按新的 Flash 布局手工调整。
-#define XHH_TASK_FLASH_USER_DATA_ADDRESS 0x0800FF00UL
+typedef struct
+{
+	/* AI:只保留当前项目明确需要持久化的字段。 */
+} xhh_Task_Flash_User_Data_t;
 
-typedef struct {
-    uint16_t time;
-    xhh_Mode_t mode;
-    Motor_Obj_t motor;
-    xhh_Task_BAT_Val_t bat_val;
-} xhh_Task_Flash_user_data_t;
-
-xhh_Task_Flash_user_data_t g_xhh_user_data;   // 跨文件全局唯一
+extern xhh_Task_Flash_User_Data_t g_xhh_user_data;
 ```
 
 ---
@@ -54,25 +51,23 @@ xhh_Task_Flash_user_data_t g_xhh_user_data;   // 跨文件全局唯一
 
 ---
 
-## 有效性校验 + 默认值
+## 有效性校验
 
 - 读取后**先校验再使用**,逐字段范围检查
-- 非法数据不部分信任,整体清默认值重写
+- 非法数据不得部分信任
 - 利用 Flash 默认全 1 特性判断首次上电
 
 ```c
 void xhh_Task_Flash_Get_User_Data(xhh_Task_Flash_user_data_t *data) {
     xhh_BSP_Flash_Read(XHH_TASK_FLASH_USER_DATA_ADDRESS, (uint8_t *)data, sizeof(*data));
-    if (xhh_Task_Flash_User_Data_IS_Valid(data) == 0) {
-        xhh_Task_Flash_User_Data_Clean(data);          // 清默认值
-        xhh_Task_Flash_Save_User_Data(data);           // 写回
+    if (xhh_Task_Flash_User_Data_IS_Valid(data) == 0)
+    {
+        /* AI:按当前项目明确的无效数据策略处理。 */
     }
 }
 ```
 
-`IS_Valid` 逐字段范围校验(枚举校验范围,数值校验 min/max),`Clean` 写默认值。
-
-校验失败策略:**整体清默认值重写**,不部分信任。理由:Flash 擦除后是 0xFF,部分字段可能合法部分非法,部分信任会导致混合状态。
+`IS_Valid` 逐字段范围校验枚举与数值范围。无效数据的处理方式是产品规则，必须由当前项目明确选择；通用规范不预设默认值、自动重写或其他兜底策略。
 
 ---
 
@@ -99,7 +94,7 @@ xhh_Task_Flash_Save_User_Data(&g_xhh_user_data);
 - 单字段 Save 接口(业务模块内)**只更新 RAM**(`g_xhh_user_data.xxx = value`),**不立即写 Flash**;整体写 Flash 由关机流程集中调用
 - 需要立即持久化的场景(如设置即生效):调用方更新运行副本后调用 `xhh_Task_Flash_Save_User_Data(&g_xhh_user_data);`
 - 读取直接用 `g_xhh_user_data.xxx`,不用函数接口
-- OTA 标志单独存固定地址,不进用户数据结构体
+- OTA 标志是否独立保存、保存位置与字段布局均由当前项目定义
 
 ---
 
