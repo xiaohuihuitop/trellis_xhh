@@ -30,8 +30,10 @@ trellis_spec/
 ```powershell
 trellis init --codex --no-monorepo -u <用户名> -y `
   --workflow skill-routed-native `
-  --workflow-source gh:<账号>/<仓库>/marketplace
+  --workflow-source ssh://git@github.com/<账号>/<仓库>/marketplace#main
 ```
+
+该命令使用 Git SSH 拉取 Workflow，避免 `gh:` 通过 GitHub Raw HTTP 获取旧缓存。执行机器必须已配置对应 GitHub SSH 凭据；未配置时应先解决 SSH 访问，不能静默切换到其他 Registry 源。
 
 初始化后会得到：
 
