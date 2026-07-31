@@ -4,7 +4,7 @@
 
 ## 提供内容
 
-- `skill-routed-native`：Codex 单 Agent 的通用任务工作流，要求每个任务自行选择并记录全局 Skill。
+- `skill-routed-native`：Codex 单 Agent 的通用任务工作流，先分类直接修改、当前任务扩展与新任务，再要求每个任务自行选择并记录全局 Skill。
 
 `skill-routed-native` 不固定绑定 `xhh-mcu-development`、`grilling` 或其他 Skill。它只要求任务规划时记录必需与条件性 Skill，并在实施和检查前加载。Skill 必须由用户环境全局安装，Registry 不负责安装。
 
@@ -51,7 +51,7 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 ```markdown
 ## Skill 路由
 
-- 必需：`xhh-mcu-development（规范版本 2.0.0）`，原因：涉及 XHH 分层与硬件事实核对。
+- 必需：`xhh-mcu-development（规范版本 2.3.0）`，原因：涉及 XHH 分层与硬件事实核对。
 - 条件性：`grilling`，触发条件：硬件路径、协议或状态机方案未决。
 ```
 
