@@ -29,6 +29,8 @@ trellis_spec/
 
 ```powershell
 trellis init --codex --no-monorepo -u <用户名> -y `
+  --registry ssh://git@github.com/<账号>/<仓库>/marketplace#main `
+  --template empty-spec `
   --workflow skill-routed-native `
   --workflow-source ssh://git@github.com/<账号>/<仓库>/marketplace#main
 ```
@@ -37,11 +39,12 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 
 初始化后会得到：
 
+- `.trellis/spec/README.md`：空白技术模板，不包含 XHH 代码规则；
 - `.trellis/workflow.md`：从 `skill-routed-native` 安装的任务流程；
 - Codex 内置的 Trellis Skill：由 `--codex` 安装；
 - 领域 Skill：由任务 PRD 选择，并由用户环境提供。
 
-本 Registry 不分发 `.trellis/spec/`。若项目确有无法进入全局 Skill 的本地代码特例，可由用户明确授权后在项目内维护；不得复制全局 Skill 的规则。
+`empty-spec` 仅抑制 Trellis 默认生成的通用 Spec。若项目确有无法进入全局 Skill 的本地代码特例，可由用户明确授权后在 `.trellis/spec/` 中维护；不得复制全局 Skill 的规则。
 
 例如 XHH MCU 任务在 `prd.md` 中记录：
 
@@ -57,14 +60,15 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 ```powershell
 $null = Get-Content -Raw -Encoding utf8 marketplace/index.json | ConvertFrom-Json
 Test-Path marketplace/workflows/skill-routed-native.md
+Test-Path marketplace/specs/empty/README.md
 git diff --check
 ```
 
-还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，且未自动安装 XHH Spec 模板。
+还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板，且未自动安装 XHH 或通用 backend/frontend Spec。
 
 ## 维护边界
 
 - Workflow 只定义任务阶段与 Skill 路由，不复制领域 Skill 内容，也不固定绑定某个领域 Skill。
 - 领域代码规则由相应全局 Skill 维护；项目硬件事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。
-- `.trellis/spec/` 只允许保存经用户确认的项目本地特例，不得复制或覆盖全局 Skill 的默认规则。
+- `empty-spec` 只用于抑制 CLI 默认 Spec；`.trellis/spec/` 只允许保存经用户确认的项目本地特例，不得复制或覆盖全局 Skill 的默认规则。
 - 不新增未经 CLI 验证的 Hook、门禁或自动化。

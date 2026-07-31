@@ -2,6 +2,14 @@
   "version": 1,
   "templates": [
     {
+      "id": "empty-spec",
+      "type": "spec",
+      "name": "空白项目 Spec 模板",
+      "description": "仅用于避免 Trellis 自动生成通用 backend/frontend Spec；不包含 XHH 代码规则。XHH 规则由全局 xhh-mcu-development Skill 提供。",
+      "path": "marketplace/specs/empty",
+      "tags": ["empty", "workflow", "single-agent"]
+    },
+    {
       "id": "skill-routed-native",
       "type": "workflow",
       "name": "按任务选 Skill 的单 Agent 工作流",
