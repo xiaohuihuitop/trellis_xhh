@@ -51,7 +51,7 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 ```markdown
 ## Skill 路由
 
-- 必需：`xhh-mcu-development（规范版本 2.3.0）`，原因：涉及 XHH 分层与硬件事实核对。
+- 必需：`xhh-mcu-development（规范版本 2.4.0）`，原因：涉及 XHH 分层与硬件事实核对。
 - 条件性：`grilling`，触发条件：硬件路径、协议或状态机方案未决。
 ```
 
