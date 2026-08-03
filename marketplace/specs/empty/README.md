@@ -1,7 +1,7 @@
 # 本地 Spec
 
-本模板不包含 XHH 代码规范，也不包含项目硬件或产品事实。
+本模板不包含领域代码规范，也不包含项目事实。
 
-它仅用于阻止 Trellis 初始化时自动生成通用的 `backend/`、`frontend/` Spec。`guides/index.md` 仅保留原始 `before-dev` 所需的空索引入口，不包含通用规则。XHH MCU 的目录、接口和源码规则由全局 `xhh-mcu-development` Skill 提供。
+它仅用于阻止 Trellis 初始化时自动生成通用的 `backend/`、`frontend/` Spec。`guides/index.md` 仅保留原始 `before-dev` 所需的空索引入口，不包含通用规则。领域目录、接口和源码规则由用户环境中已安装的全局 Skill 提供。
 
 只有用户明确确认某条规则属于当前项目本地特例、且不应进入全局 Skill 时，才在本目录新增文档。不得复制全局 Skill 的规则。

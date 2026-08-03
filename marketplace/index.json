@@ -5,7 +5,7 @@
       "id": "empty-spec",
       "type": "spec",
       "name": "空白项目 Spec 模板",
-      "description": "仅用于避免 Trellis 自动生成通用 backend/frontend Spec；不包含 XHH 代码规则。XHH 规则由全局 xhh-mcu-development Skill 提供。",
+      "description": "仅用于避免 Trellis 自动生成通用 backend/frontend Spec；不包含领域代码规则。领域规则由用户环境中已安装的全局 Skill 提供。",
       "path": "marketplace/specs/empty",
       "tags": ["empty", "workflow", "single-agent"]
     },

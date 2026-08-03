@@ -6,7 +6,7 @@
 
 - `skill-routed-native`：Codex 单 Agent 的通用任务工作流，先分类直接修改、当前任务扩展与新任务，再要求每个任务自行选择并记录全局 Skill。进入工作流的用户可见状态以 `[trellis]` 标识；涉及实物或外部系统的任务使用单变量测试卡，连续两次同症状失败后必须先诊断复盘。
 
-`skill-routed-native` 不固定绑定 `xhh-mcu-development`、`grilling` 或其他 Skill。它只要求任务规划时记录必需与条件性 Skill，并在实施和检查前加载。Skill 必须由用户环境全局安装，Registry 不负责安装。首次进入任务规划时，Workflow 会将项目 `.trellis/config.yaml` 的 Codex 调度模式收敛为 `inline`，不使用 Trellis 实现、检查或调研子 Agent。
+`skill-routed-native` 不固定绑定任何领域 Skill。它只要求任务规划时记录必需与条件性 Skill，并在实施和检查前加载。Skill 必须由用户环境全局安装，Registry 不负责安装。首次进入任务规划时，Workflow 会将项目 `.trellis/config.yaml` 的 Codex 调度模式收敛为 `inline`，不使用 Trellis 实现、检查或调研子 Agent。
 
 ## Registry 路径
 
@@ -39,7 +39,7 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 
 初始化后会得到：
 
-- `.trellis/spec/README.md`：空白技术模板，不包含 XHH 代码规则；
+- `.trellis/spec/README.md`：空白技术模板，不包含领域代码规则；
 - `.trellis/spec/guides/index.md`：原始 `before-dev` 所需的空索引，不包含通用指南；
 - `.trellis/workflow.md`：从 `skill-routed-native` 安装的任务流程；
 - Codex 内置的 Trellis Skill：由 `--codex` 安装；
@@ -47,13 +47,13 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 
 `empty-spec` 仅抑制 Trellis 默认生成的通用 Spec。若项目确有无法进入全局 Skill 的本地代码特例，可由用户明确授权后在 `.trellis/spec/` 中维护；不得复制全局 Skill 的规则。
 
-例如 XHH MCU 任务在 `prd.md` 中记录：
+例如任务在 `prd.md` 中记录：
 
 ```markdown
 ## Skill 路由
 
-- 必需：`xhh-mcu-development`，原因：涉及 XHH 分层与硬件事实核对。
-- 条件性：`grilling`，触发条件：硬件路径、协议或状态机方案未决。
+- 必需：`<skill-name>`，原因：<该任务为何必须使用>。
+- 条件性：`<skill-name>`，触发条件：<何时加载>。
 ```
 
 ## 发布前验证
@@ -66,7 +66,7 @@ Test-Path marketplace/specs/empty/guides/index.md
 git diff --check
 ```
 
-还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装 XHH 或通用 backend/frontend Spec。首次复杂任务进入规划时，确认 `.trellis/config.yaml` 已包含 `codex.dispatch_mode: inline`。
+还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。首次复杂任务进入规划时，确认 `.trellis/config.yaml` 已包含 `codex.dispatch_mode: inline`。
 
 ## 更新已初始化项目
 
