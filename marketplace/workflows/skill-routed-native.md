@@ -107,37 +107,86 @@ Trellis 的活动任务按**会话**绑定：同一会话同一时刻只能有�
 - 首次外部验证通过后，记录可恢复的绿色基线提交与对应产物。后续试验失败时先与该基线做差异对比，不要求维护额外长期分支或复制工程。
 - 跨端问题至少分别记录发起端阶段、接收端关键事件和协议或接口证据；任一侧不可观测时，下一步只能补充最小观测能力或请求用户提供证据，不能继续猜测性修复。
 
-## 阶段
+## Phase Index
+
+> `## Phase Index`、`## Phase <n>: <名称>` 和 `#### <n.n>` 是 Trellis 阶段解析契约，不得翻译、改名或删除。
 
 ```text
-Plan -> Skill 路由与事实核对 -> PRD/design/implement -> Execute -> Check -> Finish
+Phase 1: Plan    -> 分类、Skill 路由、事实核对与 inline 就绪
+Phase 2: Execute -> 单 Agent 实施与自动检查
+Phase 3: Finish  -> 记录验证、条件性 Spec 更新、提交与归档
 ```
 
-### Phase 1: Plan
+- 轻量任务可只使用 `prd.md`；复杂任务在 `task.py start` 前必须完成 `prd.md`、`design.md` 和 `implement.md`。
+- 本 Registry 只支持 Codex 单 Agent。首次进入规划时必须确认 `.trellis/config.yaml` 的 `codex.dispatch_mode` 为 `inline`。
+- 原始 `trellis-before-dev` 和 `trellis-check` 保留用于上下文与通用检查；领域规则、构建和事实门禁由 PRD 中登记的必需 Skill 提供。
+- `.trellis/spec/` 没有本地特例时保持空白；不得因为原始 `trellis-update-spec` 存在而复制全局 Skill 规则。
+
+## Phase 1: Plan
+
+#### 1.0 当前任务与请求分类
 
 1. 读取当前会话任务并输出状态摘要，完成请求分类、任务切换判定和 Brainstorm 判定。
 2. 按 Trellis 规则取得创建或切换任务的用户许可后，再创建或选择任务。
-3. 在 `prd.md` 记录范围、约束、验收条件、已确认事实、未决项和 Skill 路由。
-4. 复杂任务在实施前完成 `design.md` 与 `implement.md`。`design.md` 记录边界、调用链与取舍；`implement.md` 记录修改顺序、验证方法和回退点。
-5. 领域事实缺失或冲突时，先加载已选择的领域 Skill；仍无法确认时在 PRD 记录证据与阻塞项，并向用户确认。
-6. 高风险且方案未决时，按 Skill 路由加载 `grilling`。结论和未决项必须回写 `prd.md`；涉及技术方案时同步回写 `design.md`。
+3. 普通问答和直接修改不创建任务；新任务与当前任务扩展按“任务状态与切换”处理。
 
-### Phase 2: Execute
+#### 1.1 需求、事实与 Skill 路由
+
+1. 在 `prd.md` 记录范围、约束、验收条件、已确认事实、未决项和 Skill 路由。
+2. 复杂任务在实施前完成 `design.md` 与 `implement.md`。`design.md` 记录边界、调用链与取舍；`implement.md` 记录修改顺序、验证方法和回退点。
+3. 领域事实缺失或冲突时，先加载已选择的领域 Skill；仍无法确认时在 PRD 记录证据与阻塞项，并向用户确认。
+
+#### 1.2 高风险方案与调研
+
+1. 高风险且方案未决时，按 Skill 路由加载 `grilling`。结论和未决项必须回写 `prd.md`；涉及技术方案时同步回写 `design.md`。
+2. 同类问题已经重复失败时，按路由加载 `diagnosing-bugs`；在验证修复前不得继续试错。
+
+#### 1.3 Codex 单 Agent 就绪
+
+1. 读取 `.trellis/config.yaml`；缺少 `codex.dispatch_mode: inline` 时，先补充以下项目级配置，再继续规划：
+
+   ```yaml
+   codex:
+     dispatch_mode: inline
+   ```
+
+2. 配置完成后，当前会话主 Agent 负责实现和检查；不得调度 `trellis-implement`、`trellis-check` 或 `trellis-research` 子 Agent。
+3. 此配置只约束 Trellis 的 Codex 调度模式，不改变用户已安装的领域 Skill。
+
+#### 1.4 激活任务
+
+1. 先确认 PRD 收敛、复杂任务设计完整、必需 Skill 可用且 `inline` 配置已生效。
+2. 向用户提交规划摘要并等待实施批准；批准后执行 `task.py start`，任务才可进入 `in_progress`。
+
+## Phase 2: Execute
+
+#### 2.1 单 Agent 实施
 
 1. 仅在任务状态进入 `in_progress` 后实施。
-2. 实施前加载 PRD 中所有必需 Skill，并读取 PRD/design/implement；项目存在经确认的本地 `.trellis/spec/` 特例时，额外读取相关内容。
+2. 实施前加载 PRD 中所有必需 Skill，并读取 `prd.md`、`design.md`、`implement.md` 和经确认的本地 Spec 特例。
 3. 只修改当前任务必需的文件和调用链；领域事实未闭环时，只实施不依赖该事实的部分，或停止并请求确认。
-4. 同类问题连续失败时，按 PRD 路由加载诊断 Skill；已验证修复后，才更新项目记忆。
-5. 用户提出超出当前范围的新请求时，重新执行“任务状态与切换”规则；未明确为继续前，不得混入当前实现。
-6. 涉及外部验证时，按“外部验证与失败止损”创建测试卡；同一症状连续两次失败后不得继续试错，必须先完成诊断复盘。
+4. 用户提出超出当前范围的新请求时，重新执行“任务状态与切换”规则；未明确为继续前，不得混入当前实现。
 
-### Phase 3: Check And Finish
+#### 2.2 自动检查与验证
 
-1. 检查前再次加载 PRD 中所有必需 Skill，按其要求核对领域事实、修改范围和验证结果。
-2. 将代码验证、事实确认和实物或运行验证分别记录；不得以单一验证结果替代其他验证结论。
-3. 仅当项目存在经确认的本地特例，且该特例不属于全局 Skill 职责时才更新 `.trellis/spec/`；不得复制全局 Skill 的规则。
-4. 收尾前在 `implement.md` 写入以下最小记录：检查范围、构建或测试结果、事实确认状态、实物或运行验证状态、最终提交和未决项；再更新任务文档中的完成项与 Skill 路由，完成检查后按用户授权提交。
-5. 输出“收尾”状态摘要，明确任务是否已完成、仍待验证，及归档是否已执行；不得把未验证事项表述为完成。
+1. 每个完成的编码批次后必须执行 `trellis-check` 与 PRD 中必需 Skill 要求的检查，不等待用户重复要求“检查”。
+2. `trellis-check` 负责 diff、通用质量和项目已有检查；没有项目本地 Spec 时，不创建虚假的 package/layer Spec，也不将全局 Skill 规则复制进去。
+3. 将代码验证、事实确认和实物或运行验证分别记录；不得以单一验证结果替代其他验证结论。
+4. 涉及外部验证时，按“外部验证与失败止损”创建测试卡；同一症状连续两次失败后必须先完成诊断复盘。
+
+## Phase 3: Finish
+
+#### 3.1 项目记忆与本地 Spec
+
+1. 收尾前在 `implement.md` 写入检查范围、构建或测试结果、事实确认状态、实物或运行验证状态、最终提交和未决项，并更新任务文档中的完成项与 Skill 路由。
+2. 仅当用户明确确认产生了“当前项目长期有效、且不应进入全局 Skill”的本地代码特例时，才调用 `trellis-update-spec` 更新 `.trellis/spec/`。
+3. 全局 XHH 规则的新增或修改不调用 `trellis-update-spec`；必须由用户确认后单独维护 `xhh-mcu-development`。
+
+#### 3.2 提交与归档
+
+1. 完成检查后按用户授权提交；不得把未验证事项表述为完成。
+2. 用户明确要求收尾时，执行 `trellis-finish-work`，归档已完成任务并记录 session journal。
+3. 输出“收尾”状态摘要，明确任务是否已完成、仍待验证，以及归档是否已执行。
 
 ## 工作流状态
 
@@ -146,21 +195,21 @@ Plan -> Skill 路由与事实核对 -> PRD/design/implement -> Execute -> Check 
 [/workflow-state:no_task]
 
 [workflow-state:planning]
-以 `[trellis]` 开头保持规划阶段。先输出当前任务状态摘要；在 PRD 记录 Skill 路由、项目事实和验收条件；复杂任务完成 design.md 与 implement.md。高风险未决方案按路由加载对应 Skill，结论回写任务文档后才能 start。
+以 `[trellis]` 开头保持规划阶段。完成 Phase 1.0 至 1.4；在 `task.py start` 前确认 PRD、必需 Skill 和 `.trellis/config.yaml` 中的 `codex.dispatch_mode: inline`。高风险未决方案按路由加载对应 Skill，结论回写任务文档后才能 start。
 [/workflow-state:planning]
 
 [workflow-state:planning-inline]
-以 `[trellis]` 开头保持规划阶段。先输出当前任务状态摘要；在 PRD 记录 Skill 路由、项目事实和验收条件；复杂任务完成 design.md 与 implement.md。高风险未决方案按路由加载对应 Skill，结论回写任务文档后才能 start。
+以 `[trellis]` 开头保持规划阶段。完成 Phase 1.0 至 1.4；在 `task.py start` 前确认 PRD、必需 Skill 和 `.trellis/config.yaml` 中的 `codex.dispatch_mode: inline`。高风险未决方案按路由加载对应 Skill，结论回写任务文档后才能 start。
 [/workflow-state:planning-inline]
 
 [workflow-state:in_progress]
-以 `[trellis]` 开头输出当前任务状态摘要，并加载 PRD 中的必需 Skill，读取任务文档和经确认的本地 Spec 特例（如存在）。事实缺失时停止相关实现；范围变化时先更新任务文档；外部验证使用单变量测试卡，同一症状两次失败后先执行 `trellis-break-loop`；验证修复后再更新项目记忆。完成检查和任务文档收尾后，按用户授权提交。
+以 `[trellis]` 开头输出当前任务状态摘要。此 Registry 只允许单 Agent；若当前调度模式不是 `inline`，回到 Phase 1.3 修正配置后再实施。完成每个编码批次后必须执行 Phase 2.2 的 `trellis-check` 与领域检查；全局规则不得写入 `.trellis/spec/`。
 [/workflow-state:in_progress]
 
 [workflow-state:in_progress-inline]
-以 `[trellis]` 开头输出当前任务状态摘要，并加载 PRD 中的必需 Skill，读取任务文档和经确认的本地 Spec 特例（如存在）。事实缺失时停止相关实现；范围变化时先更新任务文档；外部验证使用单变量测试卡，同一症状两次失败后先执行 `trellis-break-loop`；验证修复后再更新项目记忆。完成检查和任务文档收尾后，按用户授权提交。
+以 `[trellis]` 开头输出当前任务状态摘要，并加载 PRD 中的必需 Skill，读取任务文档和经确认的本地 Spec 特例（如存在）。主 Agent 直接实施，不调度子 Agent；完成每个编码批次后必须执行 Phase 2.2 的 `trellis-check` 与领域检查。事实缺失时停止相关实现；全局规则不得写入 `.trellis/spec/`。
 [/workflow-state:in_progress-inline]
 
 [workflow-state:completed]
-以 `[trellis]` 开头输出“收尾”状态摘要。任务已完成时，确认任务文档、验证结论与提交状态一致，再执行归档；新请求必须重新走任务分类，不得自动并入已完成任务。
+以 `[trellis]` 开头输出“收尾”状态摘要。任务已完成时，确认任务文档、验证结论与提交状态一致；用户要求收尾后执行 `trellis-finish-work` 归档。新请求必须重新走任务分类，不得自动并入已完成任务。
 [/workflow-state:completed]
