@@ -83,7 +83,7 @@ trellis workflow --template skill-routed-native `
 ## 维护边界
 
 - Workflow 只定义任务阶段与 Skill 路由，不复制领域 Skill 内容，也不固定绑定某个领域 Skill。
-- 领域代码规则由相应全局 Skill 维护；项目硬件事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。
+- 领域代码规则由相应全局 Skill 维护；项目事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。
 - `empty-spec` 只用于抑制 CLI 默认 Spec；`.trellis/spec/` 只允许保存经用户确认的项目本地特例，不得复制或覆盖全局 Skill 的默认规则。
 - 本 Registry 只维护 Marketplace workflow 与空 Spec 模板；不修改 npm 安装目录。项目级 `codex.dispatch_mode` 由 Workflow 在首次规划时写入，领域 Skill 仍由用户环境维护。
 - 不新增未经 CLI 验证的 Hook、门禁或自动化。
