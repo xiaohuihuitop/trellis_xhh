@@ -4,7 +4,7 @@
 
 ## 提供内容
 
-- `skill-routed-native`：Codex 单 Agent 的通用任务工作流，先分类直接修改、当前任务扩展与新任务，再要求每个任务自行选择并记录全局 Skill。进入工作流的用户可见状态以 `[trellis]` 标识；涉及实物或外部系统的任务使用单变量测试卡，连续两次同症状失败后必须先诊断复盘。
+- `skill-routed-native`：Codex 单 Agent 的通用任务工作流，先分类直接修改、当前任务扩展与新任务，再要求每个任务自行选择并记录全局 Skill。进入工作流的用户可见状态以 `[trellis]` 标识；涉及实物或外部系统的任务使用单变量测试卡，连续两次同症状失败后必须先诊断复盘；收尾发现可复发规则缺口时必须请求用户确认归属。
 
 `skill-routed-native` 不固定绑定任何领域 Skill。它只要求任务规划时记录必需与条件性 Skill，并在实施和检查前加载。Skill 必须由用户环境全局安装，Registry 不负责安装。首次进入任务规划时，Workflow 会将项目 `.trellis/config.yaml` 的 Codex 调度模式收敛为 `inline`，不使用 Trellis 实现、检查或调研子 Agent。
 
