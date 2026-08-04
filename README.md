@@ -1,12 +1,12 @@
 # trellis_spec
 
-这是供 Trellis 初始化使用的 Codex 单 Agent 工作流 Registry。
+这是供 Trellis 初始化使用的 Codex 工作流 Registry。
 
 ## 提供内容
 
-- `skill-routed-native`：Codex 单 Agent 的通用任务工作流，先分类直接修改、当前任务扩展与新任务，再要求每个任务自行选择并记录全局 Skill。进入工作流的用户可见状态以 `[trellis]` 标识；涉及实物或外部系统的任务使用单变量测试卡，连续两次同症状失败后必须先诊断复盘；收尾发现可复发规则缺口时必须请求用户确认归属。
+- `skill-routed-native`：通用任务工作流，先分类直接修改、当前任务扩展与新任务，再主动发现、评估并路由当前会话可用的全局 Skill。进入工作流的用户可见状态以 `[trellis]` 标识；涉及实物或外部系统的任务使用单变量测试卡，连续两次同症状失败后必须先诊断复盘；收尾发现可复发规则缺口时必须请求用户确认归属。
 
-`skill-routed-native` 不固定绑定任何领域 Skill。它只要求任务规划时记录必需与条件性 Skill，并在实施和检查前加载。Skill 必须由用户环境全局安装，Registry 不负责安装。首次进入任务规划时，Workflow 会将项目 `.trellis/config.yaml` 的 Codex 调度模式收敛为 `inline`，不使用 Trellis 实现、检查或调研子 Agent。
+`skill-routed-native` 不固定绑定任何领域 Skill。它要求任务规划时按领域、决策、构建、测试、诊断、审查与交付等通用能力维度筛选候选，并在 PRD 中记录必需、条件性、不使用或待用户调用的结论。Skill 必须由用户环境全局安装，Registry 不负责安装。主 Agent 负责实施、整合和最终结论；仅已路由且独立只读的调研或审查可以使用子 Agent。
 
 ## Registry 路径
 
@@ -52,8 +52,11 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 ```markdown
 ## Skill 路由
 
-- 必需：`<skill-name>`，原因：<该任务为何必须使用>。
-- 条件性：`<skill-name>`，触发条件：<何时加载>。
+候选发现：已根据任务范围、技术栈、风险和验证目标筛选当前会话可用的 Skill。
+
+| Skill | 决定 | 使用阶段 | 触发范围 | 原因 |
+|---|---|---|---|---|
+| `<skill-name>` | 必需 / 条件性 / 不使用 / 待用户调用 | 规划 / 实施 / 检查 / 诊断 / 收尾 | `<条件或边界>` | `<结论依据>` |
 ```
 
 ## 发布前验证
@@ -66,7 +69,7 @@ Test-Path marketplace/specs/empty/guides/index.md
 git diff --check
 ```
 
-还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。首次复杂任务进入规划时，确认 `.trellis/config.yaml` 已包含 `codex.dispatch_mode: inline`。
+还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。首次复杂任务进入规划时，确认 PRD 会记录 Skill 候选发现与路由结论。
 
 ## 更新已初始化项目
 
@@ -85,5 +88,5 @@ trellis workflow --template skill-routed-native `
 - Workflow 只定义任务阶段与 Skill 路由，不复制领域 Skill 内容，也不固定绑定某个领域 Skill。
 - 领域代码规则由相应全局 Skill 维护；项目事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。
 - `empty-spec` 只用于抑制 CLI 默认 Spec；`.trellis/spec/` 只允许保存经用户确认的项目本地特例，不得复制或覆盖全局 Skill 的默认规则。
-- 本 Registry 只维护 Marketplace workflow 与空 Spec 模板；不修改 npm 安装目录。项目级 `codex.dispatch_mode` 由 Workflow 在首次规划时写入，领域 Skill 仍由用户环境维护。
+- 本 Registry 只维护 Marketplace workflow 与空 Spec 模板；不修改 npm 安装目录或伪造 Agent 调度配置，领域 Skill 仍由用户环境维护。
 - 不新增未经 CLI 验证的 Hook、门禁或自动化。
