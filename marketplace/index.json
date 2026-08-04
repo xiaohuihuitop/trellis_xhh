@@ -7,15 +7,15 @@
       "name": "空白项目 Spec 模板",
       "description": "仅用于避免 Trellis 自动生成通用 backend/frontend Spec；不包含领域代码规则。领域规则由用户环境中已安装的全局 Skill 提供。",
       "path": "marketplace/specs/empty",
-      "tags": ["empty", "workflow", "single-agent"]
+      "tags": ["empty", "workflow"]
     },
     {
       "id": "skill-routed-native",
       "type": "workflow",
-      "name": "按任务选 Skill 的单 Agent 工作流",
-      "description": "面向 Codex 单 Agent 的通用任务生命周期工作流。在 PRD 中选择并路由已全局安装的领域 Skill，不固定绑定任何具体 Skill。",
+      "name": "原生工作流与 Skill 路由",
+      "description": "以 Trellis native Workflow 为基线，保留 auto/inline 原生执行分支；在 PRD 中选择并路由已全局安装的领域 Skill，不固定绑定任何具体 Skill。",
       "path": "workflows/skill-routed-native.md",
-      "tags": ["single-agent", "codex", "skill-routing", "trellis"]
+      "tags": ["native", "codex", "skill-routing", "trellis"]
     }
   ]
 }
