@@ -4,7 +4,7 @@
 
 ## 提供内容
 
-- `skill-routed-native`：以 Trellis `native` Workflow 为基线的通用任务工作流。它保留原生任务生命周期、`auto/inline` 执行分支、规划、实施、检查、验证和归档契约；在此基础上增加当前会话全局 Skill 的发现与路由、当前项目/知识库/Demo 复用决策、`result.md` 结果记录、项目功能与 Bug 变更索引、项目长期决策索引、外部验证测试卡，以及重复失败后的诊断复盘。
+- `skill-routed-native`：以 Trellis `native` Workflow 为基线的通用任务工作流。它保留原生任务生命周期、`auto/inline` 执行分支、规划、实施、检查、验证和归档契约；在此基础上增加当前会话全局 Skill 的发现与路由、当前项目/知识库/Demo 复用决策、Knowledge 的 `query/capture/finalize` 动作路由、`result.md` 逐候选结果记录、项目功能与 Bug 变更索引、项目长期决策索引、外部验证测试卡，以及重复失败后的诊断复盘。
 
 `skill-routed-native` 不固定绑定任何领域 Skill。它要求任务规划时按领域、决策、构建、测试、诊断、审查与交付等通用能力维度筛选候选，并在 PRD 中记录 Skill 路由与复用决策。Skill 必须由用户环境全局安装，Registry 不负责安装。项目仍按 Trellis 正式 `codex.dispatch_mode` 配置使用原生 `auto` 或 `inline` 分支；本 Registry 不改变该配置，也不替换官方的实施和检查链路。
 
@@ -62,12 +62,14 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 ```markdown
 ## 复用决策
 
-| 来源 | 决定 | 查询目标 | 结果与边界 |
-|---|---|---|---|
-| 当前项目 | 直接处理 / 需要补充事实 | `<权威项目资料>` | `<已确认事实或待确认项>` |
-| 全局知识库 | 必须查询 / 条件性 / 不查询 / 已关闭 | `<历史问题或经验>` | `<命中和适用性>` |
-| 参考 Demo | 必须查询 / 条件性 / 不查询 | `<接口形式或稳定写法>` | `<复用与禁止照搬边界>` |
+| 来源 | 操作 | 决定 | 触发条件或查询目标 | 结果与边界 |
+|---|---|---|---|---|
+| 当前项目 | 读取事实 | 直接处理 / 需要补充事实 | `<权威项目资料>` | `<已确认事实或待确认项>` |
+| 全局知识库 | `query` | 必须查询 / 条件性 / 不查询 / 已关闭 | `<技术对象、现象、环境或历史问题>` | `<命中和适用性>` |
+| 参考 Demo | 查询 | 必须查询 / 条件性 / 不查询 | `<接口形式或稳定写法>` | `<复用与禁止照搬边界>` |
 ```
+
+Trellis 只按稳定动作名调用全局 `knowledge` Skill，不绑定 Knowledge 的发布版本。规划或诊断阶段使用 `query`；最终检查形成真实证据后，Phase 3.3 先判断候选归属，再对全局知识库子集分别至多调用一次 `capture` 和 `finalize`。`review` 只由用户明确请求或专门的知识维护任务调用。
 
 ## 发布前验证
 
@@ -76,10 +78,13 @@ $null = Get-Content -Raw -Encoding utf8 marketplace/index.json | ConvertFrom-Jso
 Test-Path marketplace/workflows/skill-routed-native.md
 Test-Path marketplace/specs/empty/README.md
 Test-Path marketplace/specs/empty/guides/index.md
+Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '动作=knowledge-query'
+Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '动作=knowledge-capture'
+Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '动作=knowledge-finalize'
 git diff --check
 ```
 
-还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。检查安装后的 Workflow 同时包含原生 `trellis-brainstorm`、`trellis-before-dev`、`trellis-check`、`task.py validate`、`codex.dispatch_mode` 分支和本 Registry 的 `Skill 路由`、`复用决策`、`result.md`、项目变更记录、项目决策记录与候选归属判断。首次复杂任务进入规划时，确认 PRD 会记录 Skill 与复用结论。
+还应在提交推送后通过远端 Registry 在空目录执行一次完整 `trellis init`；CLI 不支持本地路径作为 Registry，不得用手工复制代替初始化验证。确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。检查安装后的 Workflow 同时包含原生 `trellis-brainstorm`、`trellis-before-dev`、`trellis-check`、`task.py validate`、`codex.dispatch_mode` 分支和本 Registry 的 `Skill 路由`、`复用决策`、Knowledge `query/capture/finalize` 动作、`[trellis]` 提示、`result.md`、项目变更记录、项目决策记录与逐候选归属判断。首次复杂任务进入规划时，确认 PRD 会记录 Skill 与复用结论。
 
 ## 更新已初始化项目
 

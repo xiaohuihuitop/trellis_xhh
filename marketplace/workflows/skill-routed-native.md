@@ -47,15 +47,16 @@ Trellis decides which source the task needs; the selected global Skill owns the 
 ```markdown
 ## 复用决策
 
-| 来源 | 决定 | 查询目标 | 结果与边界 |
-|---|---|---|---|
-| 当前项目 | 直接处理 / 需要补充事实 | `<README、Doc、原理图、代码或官方资料>` | `<已确认事实或待确认项>` |
-| 全局知识库 | 必须查询 / 条件性 / 不查询 / 已关闭 | `<历史问题、根因或经验>` | `<命中、未命中、适用性结论>` |
-| 参考 Demo | 必须查询 / 条件性 / 不查询 | `<接口形式、目录结构或稳定写法>` | `<允许复用与禁止照搬的边界>` |
+| 来源 | 操作 | 决定 | 触发条件或查询目标 | 结果与边界 |
+|---|---|---|---|---|
+| 当前项目 | 读取事实 | 直接处理 / 需要补充事实 | `<README、Doc、原理图、代码或官方资料>` | `<已确认事实或待确认项>` |
+| 全局知识库 | `query` | 必须 / 条件性 / 不查询 / 已关闭 | `<技术对象、现象、环境或历史问题>` | `<命中、未命中、适用性结论>` |
+| 参考 Demo | 查询 | 必须 / 条件性 / 不查询 | `<接口形式、目录结构或稳定写法>` | `<允许复用与禁止照搬的边界>` |
 ```
 
 - Read authoritative project facts first. Missing facts stop the affected design or implementation; knowledge and Demo must not fill them with assumptions.
-- Load the global `knowledge` Skill when the user explicitly requests historical lookup, an issue repeats, a known trap or cross-project reuse may apply, or its conditional route becomes true. Obey its project configuration; `关闭` is a valid result and must not be reported as a lookup.
+- A Knowledge call is always explicit from the Workflow and action-based; never bind this Workflow to a Knowledge release name or version. Use `query` for an approved planning or diagnosis route; after final task evidence exists, use `capture` and `finalize` at most once each in Phase 3.3. Never invoke `review` during normal task completion.
+- Load the global `knowledge` Skill with `query` when the user explicitly requests historical lookup, an issue repeats, a known trap or cross-project reuse may apply, or its conditional route becomes true. Before the call, output `[trellis] 阶段=<阶段> 动作=knowledge-query 原因=<路由依据>`. Obey its project configuration; `已关闭` is a valid result and must not be reported as a lookup.
 - Query Demo when a domain Skill requires consistency in interface shape, directory layout or proven implementation style. The domain Skill decides what may be reused. Do not copy board, product, credential, protocol or environment facts from Demo without current-project confirmation.
 - Direct project reasoning is valid when facts are sufficient and neither knowledge nor Demo has a trigger. Do not perform lookup for ceremony.
 - If task scope, symptom, technology or validation target changes materially, update both `Skill 路由` and `复用决策` before continuing.
@@ -256,7 +257,7 @@ Load `trellis-brainstorm`; stay in planning.
 Lightweight: `prd.md` can be enough. Complex: finish `prd.md`, `design.md`, and `implement.md`; ask for review before `task.py start`.
 Multi-deliverable scope: consider a parent task plus independently verifiable child tasks; dependencies must be written in child artifacts, not implied by tree position.
 Sub-agent mode: curate `implement.jsonl` and `check.jsonl` as spec/research manifests before start.
-Before activation, discover and record the task's global Skill route and reuse decision in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation.
+Before activation, discover and record the task's global Skill route and reuse decision in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation. If the Knowledge `query` route is required, call it explicitly and persist its applicability result before `task.py start`.
 [/workflow-state:planning]
 
 <!-- Per-turn breadcrumb: shown throughout Phase 1 when codex.dispatch_mode=inline.
@@ -270,7 +271,7 @@ Load `trellis-brainstorm`; stay in planning.
 Lightweight: `prd.md` can be enough. Complex: finish `prd.md`, `design.md`, and `implement.md`; ask for review before `task.py start`.
 Multi-deliverable scope: consider a parent task plus independently verifiable child tasks; dependencies must be written in child artifacts, not implied by tree position.
 Inline mode: skip jsonl curation; Phase 2 reads artifacts/specs via `trellis-before-dev`.
-Before activation, discover and record the task's global Skill route and reuse decision in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation.
+Before activation, discover and record the task's global Skill route and reuse decision in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation. If the Knowledge `query` route is required, call it explicitly and persist its applicability result before `task.py start`.
 [/workflow-state:planning-inline]
 
 ### Phase 2: Execute
@@ -289,7 +290,7 @@ Sub-agent dispatch protocol applies to all platforms and all sub-agents, includi
 
 [workflow-state:in_progress]
 Tools: `trellis-implement` / `trellis-research` are sub-agent types only (Task/Agent tool, NOT Skill; there is no skill by these names). `trellis-check` exists as both; prefer the Agent form when verifying after code changes. `trellis-update-spec` may be loaded only after the user confirms that a candidate belongs to project-local Spec.
-Flow: `trellis-implement` -> `trellis-check` -> capture `result.md` (Phase 2.4) -> candidate ownership review (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Flow: `trellis-implement` -> `trellis-check` -> capture `result.md` (Phase 2.4) -> candidate ownership review -> optional Knowledge `capture` and one `finalize` call (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
 Main-session default: dispatch implement/check sub-agents. Sub-agent self-exemption: if already running as `trellis-implement`, do NOT spawn another `trellis-implement` or `trellis-check`; if already running as `trellis-check`, do NOT spawn another `trellis-check` or `trellis-implement`. Dispatch is main session only.
 Dispatch prompt starts with `Active task: <task path from task.py current>`. Read context: jsonl entries -> `prd.md` -> `design.md if present` -> `implement.md if present`.
 Before dispatch, read `prd.md` Skill 路由 and 复用决策. Required task skills must be available to the implementing or checking agent; use only documented, independent read-only sub-agents in addition to the official implement/check chain. The main session owns final integration and conclusions.
@@ -301,7 +302,7 @@ Before dispatch, read `prd.md` Skill 路由 and 复用决策. Required task skil
      instead of dispatching sub-agents. -->
 
 [workflow-state:in_progress-inline]
-Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> capture `result.md` (Phase 2.4) -> candidate ownership review (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> capture `result.md` (Phase 2.4) -> candidate ownership review -> optional Knowledge `capture` and one `finalize` call (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
 Do not dispatch implement/check sub-agents in inline mode.
 Read context: `prd.md` -> `design.md if present` -> `implement.md if present`, plus relevant spec/research loaded by skills.
 After `trellis-before-dev`, read `prd.md` Skill 路由 and 复用决策, then load required implementation or verification skills before editing. Conditional skills require their trigger to be recorded before use.
@@ -344,7 +345,7 @@ When a user request matches one of these intents inside an active task, route fi
 - Planning or unclear requirements -> `trellis-brainstorm`.
 - `in_progress` implementation/check -> dispatch `trellis-implement` / `trellis-check`.
 - Repeated debugging -> `trellis-break-loop`; review candidate ownership before any spec update. Load `trellis-update-spec` only after the user confirms project-local Spec ownership.
-- Explicit historical lookup, repeated symptoms or cross-project experience reuse -> follow `prd.md` 复用决策 and load the routed global `knowledge` Skill.
+- Explicit historical lookup, repeated symptoms or cross-project experience reuse -> follow `prd.md` 复用决策 and explicitly load the global `knowledge` Skill with `query`.
 
 [/Claude Code, Cursor, OpenCode, codex-sub-agent, Kiro, Gemini, Qoder, CodeBuddy, Copilot, Droid, Pi, Oh My Pi, ZCode, Snow, Reasonix, Trae, Grok, Kimi Code]
 
@@ -353,7 +354,7 @@ When a user request matches one of these intents inside an active task, route fi
 - Planning or unclear requirements -> `trellis-brainstorm`.
 - Before editing -> `trellis-before-dev`; after editing -> `trellis-check`.
 - Repeated debugging -> `trellis-break-loop`; review candidate ownership before any spec update. Load `trellis-update-spec` only after the user confirms project-local Spec ownership.
-- Explicit historical lookup, repeated symptoms or cross-project experience reuse -> follow `prd.md` 复用决策 and load the routed global `knowledge` Skill.
+- Explicit historical lookup, repeated symptoms or cross-project experience reuse -> follow `prd.md` 复用决策 and explicitly load the global `knowledge` Skill with `query`.
 - At any phase transition or scope change -> re-evaluate the `prd.md` Skill 路由 and 复用决策.
 
 [/codex-inline, Kilo, Antigravity, Devin]
@@ -412,7 +413,7 @@ The brainstorm skill will guide you to:
 
 After the requirement and acceptance criteria are sufficiently clear, discover the current session's available global skills and add the Registry `## Skill 路由` and `## 复用决策` tables to `prd.md`. Evaluate Skill candidates by capability category, then independently decide whether current project facts, the global knowledge base or reference Demo is needed. The user may correct either routing conclusion before implementation begins.
 
-When knowledge lookup is required, load the global `knowledge` Skill and persist only its task-relevant applicability conclusion in `prd.md` or `research/`; do not copy the knowledge note. When Demo lookup is required, persist the selected reference, reuse boundary and rejected board/product facts. If either source conflicts with current authoritative project facts, current facts win and the conflict is recorded.
+When knowledge lookup is required, output the `[trellis]` marker, explicitly load the global `knowledge` Skill with `query`, and persist only its task-relevant knowledge ID, applicability conclusion and boundary in `prd.md` or `research/`; do not copy the knowledge note. When Demo lookup is required, persist the selected reference, reuse boundary and rejected board/product facts. If either source conflicts with current authoritative project facts, current facts win and the conflict is recorded.
 
 When considering a parent/child split:
 - Use a parent task when one request contains several independently verifiable deliverables.
@@ -706,10 +707,16 @@ After the final full-scope check, create or update `{TASK_DIR}/result.md`. Recor
 - 知识库：未查询 / 未命中 / 已命中及适用性 / 已关闭
 - Demo：未查询 / 参考路径及复用边界
 - 项目决策：无 / 已记录 `DEC-NNN`
-- 候选沉淀：<交给 Phase 3.3 判断>
+
+## 持久化候选
+
+| 候选ID | 核心结论 | 证据 | 建议归属 | Knowledge 类型 / 主题键 | 验证状态与边界 | 处理状态 |
+|---|---|---|---|---|---|---|
+| `<C1 或 K1>` | `<可独立复用或长期生效的结论>` | `<result、代码、测试或用户确认>` | `<项目决策 / 全局知识库 / 全局 Skill / 本地 Spec / README事实 / 仅任务>` | `<非知识库填“-”；知识库候选由 capture 补齐>` | `<验证状态、适用与不适用边界>` | `<待分类 / 已捕获 / 已新增 / 已更新 / 待确认 / 已跳过 / 失败>` |
 ```
 
 - Every completed work task needs `result.md`, including lightweight tasks. Unverified work must remain explicitly `未执行`; code inspection or a successful build must not be relabeled as runtime, external or physical verification.
+- Record all possible durable conclusions in the table without calling Knowledge yet. Phase 3.3 first classifies ownership, then sends only the global-knowledge subset to Knowledge. If there is no qualifying evidence, write `本次未发现需要沉淀的可复用结论`.
 - A bug result may state `已确认根因` only when evidence closes the symptom -> cause -> fix -> verification chain. Otherwise write the unresolved hypothesis under `未验证项`.
 - If the task changes user-visible functionality, protocol behavior, persisted data, state-machine behavior, or fixes a bug, create or update `docs/变更记录/项目变更记录.md`. Add one concise row with date, type, module, reason, actual result, verification state and task path. Pure formatting, comments and behavior-preserving refactors stay only in `result.md` and Git.
 - If the user has explicitly confirmed a long-lived project-specific technical or product decision that affects future work, create or update `docs/决策/项目决策记录.md` using the table below. Use sequential IDs (`DEC-001`, `DEC-002`, ...). A replaced decision keeps its original row, changes status to `已替代（DEC-NNN）`, and gets a new row; never rewrite decision history.
@@ -746,20 +753,22 @@ Read `{TASK_DIR}/result.md`, then review whether this task produced new knowledg
 - New technical decisions
 - Verified root causes, fixes or cross-project experience
 
-Even if the conclusion is "nothing to update", walk through the judgment. Classify each candidate before writing:
+Even if the conclusion is "nothing to update", walk through the judgment. Classify each candidate before writing. The `result.md` 持久化候选 table is the task source of truth; the following row illustrates the ownership decision:
 
 | 候选内容 | 证据 | 建议归属 | 处理状态 |
 |---|---|---|---|
 | `<结论>` | `<result.md、代码定位、测试或已确认事实>` | 项目决策记录 / 全局知识库 / 全局 Skill / 项目本地 Spec / README项目事实 / 仅任务记录 | `<已处理 / 待用户确认 / 跳过及原因>` |
 
 - A user-confirmed, long-lived project-specific technical or product decision that affects future tasks belongs in `docs/决策/项目决策记录.md`. Discussion history and task-local choices remain in the task artifacts. If long-term intent is unclear, ask the user before writing.
-- Verified root causes, fixes, traps and reusable cross-project experience belong to the global knowledge base. Load the routed `knowledge` Skill and obey its configuration, applicability, deduplication, evidence and audit rules. If lookup or write is disabled, record `已关闭`; do not claim success.
+- Verified root causes, fixes, traps and reusable cross-project experience belong to the global knowledge base. If this owner subset is non-empty, output `[trellis] 阶段=收尾 动作=knowledge-capture 候选=<N>` and invoke Knowledge `capture` exactly once; `capture` may split, merge or reject rows and must write the resulting `K1..KN` candidates back to `result.md`.
+- If at least one Knowledge candidate remains, output `[trellis] 阶段=收尾 动作=knowledge-finalize 候选=<N>` and invoke Knowledge `finalize` exactly once for the whole list. Obey its configuration, deduplication, evidence and audit rules, then write every candidate's independent result back to `result.md`. If write is disabled, record `已关闭`; do not claim success.
 - Global reusable methods are updated only in the skill that owns them; do not duplicate them into `.trellis/spec/`.
 - Only after the user confirms that a candidate is a long-lived project-local exception, load `trellis-update-spec` and write it to `.trellis/spec/`.
 - Confirmed project facts belong in README or another authoritative project document.
 - Unverified, paused, one-off or temporary debugging notes remain in `result.md`, `research/` or verification status; they are not reusable knowledge.
 - If no reusable candidate exists, record "本次未发现需要沉淀的可复用结论" in `result.md`.
-- Do not continue to commit or archive while an ownership decision or a `knowledge` Skill `待确认` result is awaiting the user.
+- Do not invoke Knowledge `review` as part of ordinary task completion. Historical review backlog never blocks this task. A Knowledge `已捕获` result remains task evidence and does not block archive by itself.
+- Do not continue to commit or archive while this task still has an unresolved ownership decision or a Knowledge `待确认` result. Other Knowledge results and unrelated historical notes do not block the task.
 
 #### 3.4 Commit changes `[required · once]`
 
