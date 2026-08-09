@@ -16,7 +16,7 @@
 4. **Incremental development** — one task at a time
 5. **Capture learnings** — after each task, review new knowledge and write it only to its confirmed owner
 6. **Discover skills before routing** — evaluate the current session's available global skills before selecting task capabilities
-7. **Facts have an owner** — project facts belong to authoritative project documents; task decisions belong to task artifacts; reusable methods belong to their owning global skill
+7. **Facts have an owner** — project facts belong to authoritative project documents; task decisions belong to task artifacts; reusable methods belong to their owning global skill; verified cross-project experience belongs to the global knowledge base
 
 ---
 
@@ -40,12 +40,32 @@ Trellis manages task lifecycle, artifacts, context and generic verification. It 
 - When scope, technology, risk or validation goals change, re-evaluate the route and update `prd.md` before continuing.
 - Do not maintain a domain-to-skill mapping table in this Workflow. Skills own their matching and implementation rules; this Workflow records only the task-specific decision.
 
+## Registry Extension: Knowledge and Demo Routing
+
+Trellis decides which source the task needs; the selected global Skill owns the detailed lookup and reuse rules. Add this task-specific table to `prd.md` after project facts and acceptance criteria are clear:
+
+```markdown
+## 复用决策
+
+| 来源 | 决定 | 查询目标 | 结果与边界 |
+|---|---|---|---|
+| 当前项目 | 直接处理 / 需要补充事实 | `<README、Doc、原理图、代码或官方资料>` | `<已确认事实或待确认项>` |
+| 全局知识库 | 必须查询 / 条件性 / 不查询 / 已关闭 | `<历史问题、根因或经验>` | `<命中、未命中、适用性结论>` |
+| 参考 Demo | 必须查询 / 条件性 / 不查询 | `<接口形式、目录结构或稳定写法>` | `<允许复用与禁止照搬的边界>` |
+```
+
+- Read authoritative project facts first. Missing facts stop the affected design or implementation; knowledge and Demo must not fill them with assumptions.
+- Load the global `knowledge` Skill when the user explicitly requests historical lookup, an issue repeats, a known trap or cross-project reuse may apply, or its conditional route becomes true. Obey its project configuration; `关闭` is a valid result and must not be reported as a lookup.
+- Query Demo when a domain Skill requires consistency in interface shape, directory layout or proven implementation style. The domain Skill decides what may be reused. Do not copy board, product, credential, protocol or environment facts from Demo without current-project confirmation.
+- Direct project reasoning is valid when facts are sufficient and neither knowledge nor Demo has a trigger. Do not perform lookup for ceremony.
+- If task scope, symptom, technology or validation target changes materially, update both `Skill 路由` and `复用决策` before continuing.
+
 ## Registry Extension: Facts, Project Spec and Reuse Boundaries
 
 - README, product documents, schematics, authoritative APIs and project evidence own real project facts.
 - `.trellis/spec/` contains only confirmed project-local coding exceptions or conventions that do not belong in a global skill. It must not become a copy of general domain workflows.
-- Task `prd.md`, `design.md`, `implement.md` and `research/` record the scope, decisions, evidence, investigation and verification of this task only.
-- A reusable rule discovered during a task is not written automatically. Its owner must be confirmed by the user: global skill, project-local Spec, or project fact document.
+- Task `prd.md`, `design.md`, `implement.md`, `result.md` and `research/` record the scope, decisions, evidence, investigation, actual outcome and verification of this task only.
+- A reusable conclusion discovered during a task is not written before ownership classification. Its owner is one of: global knowledge base, global Skill, project-local Spec, project fact document, or task-only result. Follow the selected owner's confirmation and audit policy.
 
 ## Trellis System
 
@@ -72,11 +92,11 @@ Registry policy: use this system for confirmed project-local exceptions only. Ge
 python3 ./.trellis/scripts/get_context.py --mode packages   # list packages / layers
 ```
 
-**When to update spec**: new pattern/convention found · bug-fix prevention to codify · new technical decision.
+**When to update project-local spec**: a confirmed long-lived project exception or convention does not belong to a global Skill, the global knowledge base or a project fact document, and the user approves local Spec ownership.
 
 ### Task System
 
-Every task has its own directory under `.trellis/tasks/{MM-DD-name}/` holding `task.json`, `prd.md`, optional `design.md`, optional `implement.md`, optional `research/`, and context manifests (`implement.jsonl`, `check.jsonl`) for sub-agent-capable platforms.
+Every task has its own directory under `.trellis/tasks/{MM-DD-name}/` holding `task.json`, `prd.md`, optional `design.md`, optional `implement.md`, the final `result.md` for completed work, optional `research/`, and context manifests (`implement.jsonl`, `check.jsonl`) for sub-agent-capable platforms.
 
 ```bash
 # Task lifecycle
@@ -183,7 +203,7 @@ python3 ./.trellis/scripts/get_context.py --mode phase --step <X.Y>  # detailed 
 ```
 Phase 1: Plan    → classify, get task-creation consent, then write planning artifacts
 Phase 2: Execute → implement only after task status is in_progress
-Phase 3: Finish  → verify, update spec, commit, and wrap up
+Phase 3: Finish  → capture ownership, update durable knowledge when allowed, commit, and wrap up
 ```
 
 ### Request Triage
@@ -196,8 +216,10 @@ Phase 3: Finish  → verify, update spec, commit, and wrap up
 
 - `prd.md` — requirements, constraints, and acceptance criteria. Do not put technical design or execution checklists here.
 - `prd.md` also records the task-specific `## Skill 路由` result. The route identifies capabilities and phase ownership; it is not a technical design or a replacement for an owning skill.
+- `prd.md` records the task-specific `## 复用决策`: project facts, global knowledge and reference Demo. It records the decision and evidence, not copied knowledge or Demo code.
 - `design.md` — technical design for complex tasks: boundaries, contracts, data flow, tradeoffs, compatibility, rollout / rollback shape.
 - `implement.md` — execution plan for complex tasks: ordered checklist, validation commands, review gates, and rollback points.
+- `result.md` — actual change reason, outcome, verification status, unresolved risk and optional bug analysis. Create it after implementation and final checks; it is not a second PRD or a copied diff.
 - `implement.jsonl` / `check.jsonl` — spec and research manifests for sub-agent context. They do not replace `implement.md`.
 - Lightweight tasks may be PRD-only. Complex tasks must have `prd.md`, `design.md`, and `implement.md` before `task.py start`.
 
@@ -232,7 +254,7 @@ Load `trellis-brainstorm`; stay in planning.
 Lightweight: `prd.md` can be enough. Complex: finish `prd.md`, `design.md`, and `implement.md`; ask for review before `task.py start`.
 Multi-deliverable scope: consider a parent task plus independently verifiable child tasks; dependencies must be written in child artifacts, not implied by tree position.
 Sub-agent mode: curate `implement.jsonl` and `check.jsonl` as spec/research manifests before start.
-Before activation, discover and record the task's global Skill route in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation.
+Before activation, discover and record the task's global Skill route and reuse decision in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation.
 [/workflow-state:planning]
 
 <!-- Per-turn breadcrumb: shown throughout Phase 1 when codex.dispatch_mode=inline.
@@ -246,28 +268,29 @@ Load `trellis-brainstorm`; stay in planning.
 Lightweight: `prd.md` can be enough. Complex: finish `prd.md`, `design.md`, and `implement.md`; ask for review before `task.py start`.
 Multi-deliverable scope: consider a parent task plus independently verifiable child tasks; dependencies must be written in child artifacts, not implied by tree position.
 Inline mode: skip jsonl curation; Phase 2 reads artifacts/specs via `trellis-before-dev`.
-Before activation, discover and record the task's global Skill route in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation.
+Before activation, discover and record the task's global Skill route and reuse decision in `prd.md`; load required planning skills and record manual-only skills as awaiting user invocation.
 [/workflow-state:planning-inline]
 
 ### Phase 2: Execute
 - 2.1 Implement `[required · repeatable]`
 - 2.2 Quality check `[required · repeatable]`
 - 2.3 Rollback `[on demand]`
+- 2.4 Capture result `[required · once]`
 
 <!-- Per-turn breadcrumb: shown while status='in_progress'.
      Scope: all of Phase 2 + Phase 3.2-3.4 (status stays 'in_progress' from
      task.py start until task.py archive; only archive flips it). The body
      therefore must cover every required step from implementation through
-     commit, including Phase 3.3 spec update and Phase 3.4 commit. -->
+     commit, including Phase 3.3 ownership/durable-knowledge update and Phase 3.4 commit. -->
 
 Sub-agent dispatch protocol applies to all platforms and all sub-agents, including native Codex `SubagentStart` context injection with child-side pull fallback, class-2 Gemini/Qoder/Copilot/Reasonix/Trae/Grok/Kimi Code, hook-backed ZCode/Snow, and `trellis-research`: every dispatch prompt starts with `Active task: <task path from task.py current>` before role-specific instructions. On Grok Build, use `spawn_subagent` with `subagent_type` set to the Trellis agent name (e.g. `trellis-implement`). On Kimi Code, dispatch the built-in `coder` / `explore` sub-agent with the matching `.kimi-code/skills/trellis-<role>/SKILL.md` instructions.
 
 [workflow-state:in_progress]
 Tools: `trellis-implement` / `trellis-research` are sub-agent types only (Task/Agent tool, NOT Skill; there is no skill by these names). `trellis-check` exists as both; prefer the Agent form when verifying after code changes. `trellis-update-spec` may be loaded only after the user confirms that a candidate belongs to project-local Spec.
-Flow: `trellis-implement` -> `trellis-check` -> candidate ownership review (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Flow: `trellis-implement` -> `trellis-check` -> capture `result.md` (Phase 2.4) -> candidate ownership review (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
 Main-session default: dispatch implement/check sub-agents. Sub-agent self-exemption: if already running as `trellis-implement`, do NOT spawn another `trellis-implement` or `trellis-check`; if already running as `trellis-check`, do NOT spawn another `trellis-check` or `trellis-implement`. Dispatch is main session only.
 Dispatch prompt starts with `Active task: <task path from task.py current>`. Read context: jsonl entries -> `prd.md` -> `design.md if present` -> `implement.md if present`.
-Before dispatch, read `prd.md` Skill 路由. Required task skills must be available to the implementing or checking agent; use only documented, independent read-only sub-agents in addition to the official implement/check chain. The main session owns final integration and conclusions.
+Before dispatch, read `prd.md` Skill 路由 and 复用决策. Required task skills must be available to the implementing or checking agent; use only documented, independent read-only sub-agents in addition to the official implement/check chain. The main session owns final integration and conclusions.
 [/workflow-state:in_progress]
 
 <!-- Per-turn breadcrumb: shown while status='in_progress' when
@@ -276,15 +299,15 @@ Before dispatch, read `prd.md` Skill 路由. Required task skills must be availa
      instead of dispatching sub-agents. -->
 
 [workflow-state:in_progress-inline]
-Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> candidate ownership review (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> capture `result.md` (Phase 2.4) -> candidate ownership review (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
 Do not dispatch implement/check sub-agents in inline mode.
 Read context: `prd.md` -> `design.md if present` -> `implement.md if present`, plus relevant spec/research loaded by skills.
-After `trellis-before-dev`, read `prd.md` Skill 路由 and load its required implementation or verification skills before editing. Conditional skills require their trigger to be recorded before use.
+After `trellis-before-dev`, read `prd.md` Skill 路由 and 复用决策, then load required implementation or verification skills before editing. Conditional skills require their trigger to be recorded before use.
 [/workflow-state:in_progress-inline]
 
 ### Phase 3: Finish
 - 3.2 Debug retrospective `[on demand]`
-- 3.3 Candidate ownership and Spec update `[required · once]`
+- 3.3 Candidate ownership and durable knowledge update `[required · once]`
 - 3.4 Commit changes `[required · once]`
 - 3.5 Wrap-up reminder
 
@@ -319,6 +342,7 @@ When a user request matches one of these intents inside an active task, route fi
 - Planning or unclear requirements -> `trellis-brainstorm`.
 - `in_progress` implementation/check -> dispatch `trellis-implement` / `trellis-check`.
 - Repeated debugging -> `trellis-break-loop`; review candidate ownership before any spec update. Load `trellis-update-spec` only after the user confirms project-local Spec ownership.
+- Explicit historical lookup, repeated symptoms or cross-project experience reuse -> follow `prd.md` 复用决策 and load the routed global `knowledge` Skill.
 
 [/Claude Code, Cursor, OpenCode, codex-sub-agent, Kiro, Gemini, Qoder, CodeBuddy, Copilot, Droid, Pi, Oh My Pi, ZCode, Snow, Reasonix, Trae, Grok, Kimi Code]
 
@@ -327,7 +351,8 @@ When a user request matches one of these intents inside an active task, route fi
 - Planning or unclear requirements -> `trellis-brainstorm`.
 - Before editing -> `trellis-before-dev`; after editing -> `trellis-check`.
 - Repeated debugging -> `trellis-break-loop`; review candidate ownership before any spec update. Load `trellis-update-spec` only after the user confirms project-local Spec ownership.
-- At any phase transition or scope change -> re-evaluate the `prd.md` Skill 路由.
+- Explicit historical lookup, repeated symptoms or cross-project experience reuse -> follow `prd.md` 复用决策 and load the routed global `knowledge` Skill.
+- At any phase transition or scope change -> re-evaluate the `prd.md` Skill 路由 and 复用决策.
 
 [/codex-inline, Kilo, Antigravity, Devin]
 
@@ -335,7 +360,7 @@ When a user request matches one of these intents inside an active task, route fi
 
 - Task creation approval is not implementation approval; implementation waits for `task.py start` after artifact review.
 - PRD-only is valid for lightweight tasks; complex tasks need `design.md` + `implement.md`.
-- Planning must be persisted to task artifacts; checks must run before reporting completion.
+- Planning must be persisted to task artifacts; checks must run and `result.md` must record the actual outcome before reporting completion.
 
 ### Loading Step Detail
 
@@ -383,7 +408,9 @@ The brainstorm skill will guide you to:
 - Keep `prd.md` focused on requirements and acceptance criteria
 - For complex tasks, produce `design.md` and `implement.md` before implementation starts
 
-After the requirement and acceptance criteria are sufficiently clear, discover the current session's available global skills and add the Registry `## Skill 路由` table to `prd.md`. Evaluate candidates by capability category, not by a hard-coded list. The user may correct the routing conclusion before implementation begins.
+After the requirement and acceptance criteria are sufficiently clear, discover the current session's available global skills and add the Registry `## Skill 路由` and `## 复用决策` tables to `prd.md`. Evaluate Skill candidates by capability category, then independently decide whether current project facts, the global knowledge base or reference Demo is needed. The user may correct either routing conclusion before implementation begins.
+
+When knowledge lookup is required, load the global `knowledge` Skill and persist only its task-relevant applicability conclusion in `prd.md` or `research/`; do not copy the knowledge note. When Demo lookup is required, persist the selected reference, reuse boundary and rejected board/product facts. If either source conflicts with current authoritative project facts, current facts win and the conflict is recorded.
 
 When considering a parent/child split:
 - Use a parent task when one request contains several independently verifiable deliverables.
@@ -506,6 +533,7 @@ If `task.py start` errors with a session-identity message (no context key from h
 |------|:---:|
 | `prd.md` exists | ✅ |
 | `prd.md` records Skill discovery and routing | ✅ |
+| `prd.md` records current-project / knowledge / Demo reuse decisions | ✅ |
 | Required planning/implementation skills are loaded for the relevant phase | ✅ |
 | User confirms task should enter implementation | ✅ |
 | `task.py start` has been run (status = in_progress) | ✅ |
@@ -573,7 +601,7 @@ The platform prelude auto-handles the context load requirement:
 [codex-inline, Kilo, Antigravity, Devin]
 
 1. Load the `trellis-before-dev` skill to read project guidelines
-2. Read `{TASK_DIR}/prd.md`, including its `## Skill 路由`, then `design.md` if present, then `implement.md` if present
+2. Read `{TASK_DIR}/prd.md`, including its `## Skill 路由` and `## 复用决策`, then `design.md` if present, then `implement.md` if present
 3. Load every required Skill assigned to implementation or verification before editing; record a conditional Skill before loading it when its trigger becomes true
 4. Consult materials under `{TASK_DIR}/research/`
 5. Implement the code per reviewed artifacts
@@ -636,6 +664,53 @@ When a conclusion depends on a device, deployment, build artifact, client, peer 
 - After two consecutive cards fail with the same observable symptom, stop changing product code for that path. Load the routed diagnostic capability and `trellis-break-loop`; record confirmed facts, disproved hypotheses, prioritized new hypotheses and the next minimal experiment before retrying.
 - Do not present local builds, logs or code paths as external functional verification. Record code verification, fact confirmation and external/runtime verification separately.
 
+#### 2.4 Capture result `[required · once]`
+
+After the final full-scope check, create or update `{TASK_DIR}/result.md`. Record the actual outcome, not the planned outcome and not a copy of the diff:
+
+```markdown
+# 变更结果
+
+## 基本信息
+
+- 完成日期：YYYY-MM-DD
+- 变更类型：功能 / Bug修复 / 重构 / 文档 / 构建
+
+## 修改原因
+
+<引用 PRD 中的目标或问题，说明为什么必须修改。>
+
+## 实际修改
+
+<说明最终行为、关键边界和与原计划的差异。>
+
+## 验证结果
+
+- 代码检查：通过 / 失败 / 未执行
+- 构建验证：通过 / 失败 / 未执行
+- 自动化测试：通过 / 失败 / 未执行
+- 外部或实物验证：通过 / 失败 / 未执行
+- 未验证项：<没有则写“无”>
+
+## Bug分析
+
+- 异常现象：<非 Bug 任务删除本节>
+- 已确认根因：
+- 修复方式：
+- 防止复发：
+
+## 复用记录
+
+- 知识库：未查询 / 未命中 / 已命中及适用性 / 已关闭
+- Demo：未查询 / 参考路径及复用边界
+- 候选沉淀：<交给 Phase 3.3 判断>
+```
+
+- Every completed work task needs `result.md`, including lightweight tasks. Unverified work must remain explicitly `未执行`; code inspection or a successful build must not be relabeled as runtime, external or physical verification.
+- A bug result may state `已确认根因` only when evidence closes the symptom -> cause -> fix -> verification chain. Otherwise write the unresolved hypothesis under `未验证项`.
+- If the task changes user-visible functionality, protocol behavior, persisted data, state-machine behavior, or fixes a bug, create or update `docs/变更记录/项目变更记录.md`. Add one concise row with date, type, module, reason, actual result, verification state and task path. Pure formatting, comments and behavior-preserving refactors stay only in `result.md` and Git.
+- Git remains the source of the exact diff and commit time. Do not duplicate file-by-file changes in `result.md` or the project change log.
+
 ---
 
 ## Phase 3: Finish
@@ -651,28 +726,31 @@ If this task involved repeated debugging (the same issue was fixed multiple time
 
 The goal is to capture debugging lessons so the same class of issue doesn't recur.
 
-#### 3.3 Candidate ownership and Spec update `[required · once]`
+#### 3.3 Candidate ownership and durable knowledge update `[required · once]`
 
-Do not load `trellis-update-spec` yet. First review whether this task produced new knowledge worth recording:
+Read `{TASK_DIR}/result.md`, then review whether this task produced new knowledge worth recording:
 - Newly discovered patterns or conventions
 - Pitfalls you hit
 - New technical decisions
+- Verified root causes, fixes or cross-project experience
 
-Even if the conclusion is "nothing to update", walk through the judgment. Before writing any rule, present the following candidate table to the user and wait for the owner decision:
+Even if the conclusion is "nothing to update", walk through the judgment. Classify each candidate before writing:
 
-| 候选规则 | 证据 | 建议归属 |
-|---|---|---|
-| `<规则>` | `<代码定位、测试或已确认事实>` | 全局 Skill / 项目本地 Spec / README 项目事实 |
+| 候选内容 | 证据 | 建议归属 | 处理状态 |
+|---|---|---|---|
+| `<结论>` | `<result.md、代码定位、测试或已确认事实>` | 全局知识库 / 全局 Skill / 项目本地 Spec / README项目事实 / 仅任务记录 | `<已处理 / 待用户确认 / 跳过及原因>` |
 
+- Verified root causes, fixes, traps and reusable cross-project experience belong to the global knowledge base. Load the routed `knowledge` Skill and obey its configuration, applicability, deduplication, evidence and audit rules. If lookup or write is disabled, record `已关闭`; do not claim success.
 - Global reusable methods are updated only in the skill that owns them; do not duplicate them into `.trellis/spec/`.
 - Only after the user confirms that a candidate is a long-lived project-local exception, load `trellis-update-spec` and write it to `.trellis/spec/`.
 - Confirmed project facts belong in README or another authoritative project document.
-- Unverified, paused, one-off or temporary debugging notes remain in task artifacts or verification status; they are not candidate rules.
-- If no candidate exists, record "本次未发现需要确认归属的候选规范" in the task artifact.
+- Unverified, paused, one-off or temporary debugging notes remain in `result.md`, `research/` or verification status; they are not reusable knowledge.
+- If no reusable candidate exists, record "本次未发现需要沉淀的可复用结论" in `result.md`.
+- Do not continue to commit or archive while an ownership decision or a `knowledge` Skill `待确认` result is awaiting the user.
 
 #### 3.4 Commit changes `[required · once]`
 
-**Spec-sync preamble**: before drafting commits, ask: did this task fix a bug or surface non-obvious knowledge that needs an owner decision? If yes, return to Phase 3.3 first. Do not archive the task while a candidate rule is awaiting the user's ownership decision.
+**Knowledge/spec-sync preamble**: before drafting commits, confirm that `result.md` exists and ask whether this task fixed a bug or surfaced non-obvious knowledge that needs ownership handling. If yes, return to Phase 3.3 first. Do not archive the task while a candidate owner or `knowledge` confirmation is pending.
 
 The AI drives a batched commit of this task's code changes so `/finish-work` can run cleanly afterwards. Goal: produce work commits FIRST, then bookkeeping (archive + journal) commits land after — never interleaved.
 

@@ -4,9 +4,9 @@
 
 ## 提供内容
 
-- `skill-routed-native`：以 Trellis `native` Workflow 为基线的通用任务工作流。它保留原生任务生命周期、`auto/inline` 执行分支、规划、实施、检查、验证和归档契约；在此基础上增加当前会话全局 Skill 的发现与路由、事实归属和规范回写边界、外部验证测试卡，以及重复失败后的诊断复盘。
+- `skill-routed-native`：以 Trellis `native` Workflow 为基线的通用任务工作流。它保留原生任务生命周期、`auto/inline` 执行分支、规划、实施、检查、验证和归档契约；在此基础上增加当前会话全局 Skill 的发现与路由、当前项目/知识库/Demo 复用决策、`result.md` 结果记录、项目功能与 Bug 变更索引、外部验证测试卡，以及重复失败后的诊断复盘。
 
-`skill-routed-native` 不固定绑定任何领域 Skill。它要求任务规划时按领域、决策、构建、测试、诊断、审查与交付等通用能力维度筛选候选，并在 PRD 中记录必需、条件性、不使用或待用户调用的结论。Skill 必须由用户环境全局安装，Registry 不负责安装。项目仍按 Trellis 正式 `codex.dispatch_mode` 配置使用原生 `auto` 或 `inline` 分支；本 Registry 不改变该配置，也不替换官方的实施和检查链路。
+`skill-routed-native` 不固定绑定任何领域 Skill。它要求任务规划时按领域、决策、构建、测试、诊断、审查与交付等通用能力维度筛选候选，并在 PRD 中记录 Skill 路由与复用决策。Skill 必须由用户环境全局安装，Registry 不负责安装。项目仍按 Trellis 正式 `codex.dispatch_mode` 配置使用原生 `auto` 或 `inline` 分支；本 Registry 不改变该配置，也不替换官方的实施和检查链路。
 
 ## Registry 路径
 
@@ -59,6 +59,16 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 | `<skill-name>` | 必需 / 条件性 / 不使用 / 待用户调用 | 规划 / 实施 / 检查 / 诊断 / 收尾 | `<条件或边界>` | `<结论依据>` |
 ```
 
+```markdown
+## 复用决策
+
+| 来源 | 决定 | 查询目标 | 结果与边界 |
+|---|---|---|---|
+| 当前项目 | 直接处理 / 需要补充事实 | `<权威项目资料>` | `<已确认事实或待确认项>` |
+| 全局知识库 | 必须查询 / 条件性 / 不查询 / 已关闭 | `<历史问题或经验>` | `<命中和适用性>` |
+| 参考 Demo | 必须查询 / 条件性 / 不查询 | `<接口形式或稳定写法>` | `<复用与禁止照搬边界>` |
+```
+
 ## 发布前验证
 
 ```powershell
@@ -69,7 +79,7 @@ Test-Path marketplace/specs/empty/guides/index.md
 git diff --check
 ```
 
-还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。检查安装后的 Workflow 同时包含原生 `trellis-brainstorm`、`trellis-before-dev`、`trellis-check`、`task.py validate`、`codex.dispatch_mode` 分支和本 Registry 的 `Skill 路由`、候选归属判断。首次复杂任务进入规划时，确认 PRD 会记录 Skill 候选发现与路由结论。
+还应在空目录执行一次完整 `trellis init`，确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 仅含空白模板和空指南索引，且未自动安装通用 backend/frontend Spec。检查安装后的 Workflow 同时包含原生 `trellis-brainstorm`、`trellis-before-dev`、`trellis-check`、`task.py validate`、`codex.dispatch_mode` 分支和本 Registry 的 `Skill 路由`、`复用决策`、`result.md` 与候选归属判断。首次复杂任务进入规划时，确认 PRD 会记录 Skill 与复用结论。
 
 ## 更新已初始化项目
 
@@ -86,7 +96,7 @@ trellis workflow --template skill-routed-native `
 ## 维护边界
 
 - Workflow 以当前 Trellis 原生 Workflow 为上游基线，并仅增加任务阶段、Skill 路由与知识归属规则；不复制领域 Skill 内容，也不固定绑定某个领域 Skill。Trellis CLI 升级后必须先对照新的原生 Workflow，再迁移本 Registry 扩展。
-- 领域代码规则由相应全局 Skill 维护；项目事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。
+- 领域代码规则由相应全局 Skill 维护；跨项目已验证经验由全局 `knowledge` Skill 管理；项目事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。
 - `empty-spec` 只用于抑制 CLI 默认 Spec；`.trellis/spec/` 只允许保存经用户确认的项目本地特例，不得复制或覆盖全局 Skill 的默认规则。
 - 本 Registry 只维护 Marketplace workflow 与空 Spec 模板；不修改 npm 安装目录、不强制 `codex.dispatch_mode`、不伪造 Agent 调度配置，领域 Skill 仍由用户环境维护。
 - 不新增未经 CLI 验证的 Hook、门禁或自动化。
