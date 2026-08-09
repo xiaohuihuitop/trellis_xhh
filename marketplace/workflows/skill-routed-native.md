@@ -16,7 +16,7 @@
 4. **Incremental development** — one task at a time
 5. **Capture learnings** — after each task, review new knowledge and write it only to its confirmed owner
 6. **Discover skills before routing** — evaluate the current session's available global skills before selecting task capabilities
-7. **Facts have an owner** — project facts belong to authoritative project documents; task decisions belong to task artifacts; reusable methods belong to their owning global skill; verified cross-project experience belongs to the global knowledge base
+7. **Facts have an owner** — project facts belong to authoritative project documents; task decisions belong to task artifacts; confirmed long-lived project decisions belong to the project decision log; reusable methods belong to their owning global skill; verified cross-project experience belongs to the global knowledge base
 
 ---
 
@@ -65,7 +65,9 @@ Trellis decides which source the task needs; the selected global Skill owns the 
 - README, product documents, schematics, authoritative APIs and project evidence own real project facts.
 - `.trellis/spec/` contains only confirmed project-local coding exceptions or conventions that do not belong in a global skill. It must not become a copy of general domain workflows.
 - Task `prd.md`, `design.md`, `implement.md`, `result.md` and `research/` record the scope, decisions, evidence, investigation, actual outcome and verification of this task only.
-- A reusable conclusion discovered during a task is not written before ownership classification. Its owner is one of: global knowledge base, global Skill, project-local Spec, project fact document, or task-only result. Follow the selected owner's confirmation and audit policy.
+- `docs/变更记录/项目变更记录.md` is the concise project history for behavior changes and bug fixes. `docs/决策/项目决策记录.md` is the concise index of user-confirmed, long-lived project decisions that affect future work. Create either file only when its first qualifying record appears.
+- A durable conclusion discovered during a task is not written before ownership classification. Its owner is one of: project decision log, global knowledge base, global Skill, project-local Spec, project fact document, or task-only result. Follow the selected owner's confirmation and audit policy.
+- Do not recreate `项目概览`, `当前状态` or rolling task snapshots as a parallel memory system. Authoritative project documents, Trellis task artifacts, the two project indexes above and Git already own those responsibilities.
 
 ## Trellis System
 
@@ -703,12 +705,22 @@ After the final full-scope check, create or update `{TASK_DIR}/result.md`. Recor
 
 - 知识库：未查询 / 未命中 / 已命中及适用性 / 已关闭
 - Demo：未查询 / 参考路径及复用边界
+- 项目决策：无 / 已记录 `DEC-NNN`
 - 候选沉淀：<交给 Phase 3.3 判断>
 ```
 
 - Every completed work task needs `result.md`, including lightweight tasks. Unverified work must remain explicitly `未执行`; code inspection or a successful build must not be relabeled as runtime, external or physical verification.
 - A bug result may state `已确认根因` only when evidence closes the symptom -> cause -> fix -> verification chain. Otherwise write the unresolved hypothesis under `未验证项`.
 - If the task changes user-visible functionality, protocol behavior, persisted data, state-machine behavior, or fixes a bug, create or update `docs/变更记录/项目变更记录.md`. Add one concise row with date, type, module, reason, actual result, verification state and task path. Pure formatting, comments and behavior-preserving refactors stay only in `result.md` and Git.
+- If the user has explicitly confirmed a long-lived project-specific technical or product decision that affects future work, create or update `docs/决策/项目决策记录.md` using the table below. Use sequential IDs (`DEC-001`, `DEC-002`, ...). A replaced decision keeps its original row, changes status to `已替代（DEC-NNN）`, and gets a new row; never rewrite decision history.
+
+  ```markdown
+  | ID | 日期 | 状态 | 领域 | 决策 | 原因 | 影响范围 | 关联任务 |
+  |---|---|---|---|---|---|---|---|
+  | DEC-001 | YYYY-MM-DD | 生效 | `<模块或领域>` | `<确认结论>` | `<选择原因>` | `<后续受影响范围>` | `<Trellis任务路径>` |
+  ```
+
+- Do not put implementation details, task plans, unconfirmed options, temporary workarounds, project facts, coding conventions or cross-project experience in the project decision log. Those remain in task artifacts, authoritative project documents, project-local Spec, global Skills or the global knowledge base according to ownership.
 - Git remains the source of the exact diff and commit time. Do not duplicate file-by-file changes in `result.md` or the project change log.
 
 ---
@@ -726,7 +738,7 @@ If this task involved repeated debugging (the same issue was fixed multiple time
 
 The goal is to capture debugging lessons so the same class of issue doesn't recur.
 
-#### 3.3 Candidate ownership and durable knowledge update `[required · once]`
+#### 3.3 Candidate ownership and durable record update `[required · once]`
 
 Read `{TASK_DIR}/result.md`, then review whether this task produced new knowledge worth recording:
 - Newly discovered patterns or conventions
@@ -738,8 +750,9 @@ Even if the conclusion is "nothing to update", walk through the judgment. Classi
 
 | 候选内容 | 证据 | 建议归属 | 处理状态 |
 |---|---|---|---|
-| `<结论>` | `<result.md、代码定位、测试或已确认事实>` | 全局知识库 / 全局 Skill / 项目本地 Spec / README项目事实 / 仅任务记录 | `<已处理 / 待用户确认 / 跳过及原因>` |
+| `<结论>` | `<result.md、代码定位、测试或已确认事实>` | 项目决策记录 / 全局知识库 / 全局 Skill / 项目本地 Spec / README项目事实 / 仅任务记录 | `<已处理 / 待用户确认 / 跳过及原因>` |
 
+- A user-confirmed, long-lived project-specific technical or product decision that affects future tasks belongs in `docs/决策/项目决策记录.md`. Discussion history and task-local choices remain in the task artifacts. If long-term intent is unclear, ask the user before writing.
 - Verified root causes, fixes, traps and reusable cross-project experience belong to the global knowledge base. Load the routed `knowledge` Skill and obey its configuration, applicability, deduplication, evidence and audit rules. If lookup or write is disabled, record `已关闭`; do not claim success.
 - Global reusable methods are updated only in the skill that owns them; do not duplicate them into `.trellis/spec/`.
 - Only after the user confirms that a candidate is a long-lived project-local exception, load `trellis-update-spec` and write it to `.trellis/spec/`.
@@ -750,7 +763,7 @@ Even if the conclusion is "nothing to update", walk through the judgment. Classi
 
 #### 3.4 Commit changes `[required · once]`
 
-**Knowledge/spec-sync preamble**: before drafting commits, confirm that `result.md` exists and ask whether this task fixed a bug or surfaced non-obvious knowledge that needs ownership handling. If yes, return to Phase 3.3 first. Do not archive the task while a candidate owner or `knowledge` confirmation is pending.
+**Durable-record preamble**: before drafting commits, confirm that `result.md` exists and ask whether this task fixed a bug, established a long-lived project decision, or surfaced non-obvious knowledge that needs ownership handling. If yes, return to Phase 3.3 first. Do not archive the task while a candidate owner or `knowledge` confirmation is pending.
 
 The AI drives a batched commit of this task's code changes so `/finish-work` can run cleanly afterwards. Goal: produce work commits FIRST, then bookkeeping (archive + journal) commits land after — never interleaved.
 

@@ -13,7 +13,7 @@
       "id": "skill-routed-native",
       "type": "workflow",
       "name": "原生工作流与 Skill 路由",
-      "description": "以 Trellis native Workflow 为基线，保留 auto/inline 原生执行分支；路由全局 Skill、知识库与 Demo，并记录任务实际结果和可追溯变更。",
+      "description": "以 Trellis native Workflow 为基线，保留 auto/inline 原生执行分支；路由全局 Skill、知识库与 Demo，并记录任务实际结果、项目变更和长期项目决策。",
       "path": "workflows/skill-routed-native.md",
       "tags": ["native", "codex", "skill-routing", "knowledge", "traceability", "trellis"]
     }
