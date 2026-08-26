@@ -64,7 +64,7 @@ Trellis decides which source the task needs; the selected global Skill owns the 
 ## Registry Extension: Facts, Project Spec and Reuse Boundaries
 
 - README, product documents, schematics, authoritative APIs and project evidence own real project facts.
-- `.trellis/spec/` contains only confirmed project-local coding exceptions or conventions that do not belong in a global skill. It must not become a copy of general domain workflows.
+- `.trellis/spec/` starts with Trellis-provided package/layer guidelines and may be refined with confirmed project coding conventions. Keep it aligned with the real codebase; do not copy an owning global Skill's whole domain workflow into it.
 - Task `prd.md`, `design.md`, `implement.md`, `result.md` and `research/` record the scope, decisions, evidence, investigation, actual outcome and verification of this task only.
 - `docs/变更记录/项目变更记录.md` is the concise project history for behavior changes and bug fixes. `docs/决策/项目决策记录.md` is the concise index of user-confirmed, long-lived project decisions that affect future work. Create either file only when its first qualifying record appears.
 - A durable conclusion discovered during a task is not written before ownership classification. Its owner is one of: project decision log, global knowledge base, global Skill, project-local Spec, project fact document, or task-only result. Follow the selected owner's confirmation and audit policy.
@@ -89,13 +89,13 @@ Creates `.trellis/.developer` (gitignored) + `.trellis/workspace/<your-name>/`.
 - `.trellis/spec/<package>/<layer>/index.md` — entry point with **Pre-Development Checklist** + **Quality Check**. Actual guidelines live in the `.md` files it points to.
 - `.trellis/spec/guides/index.md` — cross-package thinking guides.
 
-Registry policy: use this system for confirmed project-local exceptions only. General language, framework and domain workflows remain in the global skills that own them.
+Registry policy: keep the Trellis-provided backend/frontend/guides baseline and refine it with confirmed project conventions backed by real code examples. General domain methods and lifecycle workflows remain in the global skills that own them.
 
 ```bash
 python3 ./.trellis/scripts/get_context.py --mode packages   # list packages / layers
 ```
 
-**When to update project-local spec**: a confirmed long-lived project exception or convention does not belong to a global Skill, the global knowledge base or a project fact document, and the user approves local Spec ownership.
+**When to update project-local spec**: the project has a confirmed long-lived coding convention or a Trellis baseline guideline must be specialized to match real project code; the conclusion does not belong to a global Skill, the global knowledge base or a project fact document, and the user approves local Spec ownership.
 
 ### Task System
 
@@ -134,6 +134,25 @@ python3 ./.trellis/scripts/task.py create-pr [name] [--dry-run]
 > Run `python3 ./.trellis/scripts/task.py --help` to see the authoritative, up-to-date list.
 
 **Current-task mechanism**: `task.py create` creates the task directory and (when session identity is available) auto-sets the per-session active-task pointer so the planning breadcrumb fires immediately. `task.py start` writes the same pointer (idempotent if already set) and flips `task.json.status` from `planning` to `in_progress`. State is stored under `.trellis/.runtime/sessions/`. If no context key is available from hook input, `TRELLIS_CONTEXT_ID`, or a platform-native session environment variable, there is no active task and `task.py start` fails with a session identity hint. `task.py finish` deletes the current session file (status unchanged). `task.py archive <task>` writes `status=completed`, moves the directory to `archive/`, and deletes any runtime session files that still point at the archived task.
+
+### Authorization and external-state gates
+
+Trellis task state and Git state are separate. Treat the following as independent approvals in the current turn:
+
+```text
+批准规划  !=  批准实施
+批准实施  !=  批准检查
+批准检查  !=  批准提交
+批准提交  !=  批准归档
+批准归档  !=  批准推送
+```
+
+- `批准实施` authorizes only the files and actions listed in the current preflight/checkpoint. It never authorizes `git add`, `git commit`, `task.py archive`, `/finish-work`, `add_session.py` or `git push`.
+- `ok` or `行` is valid for a commit only when it directly follows the displayed commit plan. A planning approval, implementation approval, or a general “继续/完成” is not commit or archive approval.
+- Before any diff outside the current allowed scope is edited, stop, update the scope and verification plan, and obtain approval for the expanded scope.
+- Work commit, task archive, journal/session recording and push are separate external-state operations. Before each one, output a visible `[trellis]` line naming the phase, action and required confirmation. Execute only the operation explicitly confirmed by the user in that turn; do not infer the next operation from a previous approval.
+- If any external, physical or user acceptance item remains `待用户验证` or unchecked, keep the task in progress and do not archive by default. Archive with pending validation requires the user to explicitly approve that exception, and the unresolved items must remain in `result.md`. Build or static review success does not count as external validation.
+- Trellis does not silently change the CLI's bookkeeping defaults. Projects that do not want archive/session commands to create Git commits should set `session_auto_commit: false` or use `task.py archive <task> --no-commit` after archive itself has been authorized. This setting does not authorize archive and does not affect work commits.
 
 ### Workspace System
 
@@ -290,7 +309,8 @@ Sub-agent dispatch protocol applies to all platforms and all sub-agents, includi
 
 [workflow-state:in_progress]
 Tools: `trellis-implement` / `trellis-research` are sub-agent types only (Task/Agent tool, NOT Skill; there is no skill by these names). `trellis-check` exists as both; prefer the Agent form when verifying after code changes. `trellis-update-spec` may be loaded only after the user confirms that a candidate belongs to project-local Spec.
-Flow: `trellis-implement` -> `trellis-check` -> capture `result.md` (Phase 2.4) -> candidate ownership review -> optional Knowledge `capture` and one `finalize` call (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Flow: `trellis-implement` -> `trellis-check` -> capture `result.md` (Phase 2.4) -> candidate ownership review -> optional Knowledge `capture` and one `finalize` call (Phase 3.3) -> show commit plan and wait for explicit user confirmation -> commit only -> show archive status and wait for explicit user confirmation -> optional `/trellis:finish-work`.
+External-state gate: `批准实施` never authorizes commit, archive, session recording or push. Before each such action output `[trellis] 阶段=<阶段> 动作=<动作> 状态=等待用户确认`; pending external/physical validation keeps the task in progress unless the user explicitly approves archiving with pending items.
 Main-session default: dispatch implement/check sub-agents. Sub-agent self-exemption: if already running as `trellis-implement`, do NOT spawn another `trellis-implement` or `trellis-check`; if already running as `trellis-check`, do NOT spawn another `trellis-check` or `trellis-implement`. Dispatch is main session only.
 Dispatch prompt starts with `Active task: <task path from task.py current>`. Read context: jsonl entries -> `prd.md` -> `design.md if present` -> `implement.md if present`.
 Before dispatch, read `prd.md` Skill 路由 and 复用决策. Required task skills must be available to the implementing or checking agent; use only documented, independent read-only sub-agents in addition to the official implement/check chain. The main session owns final integration and conclusions.
@@ -302,7 +322,8 @@ Before dispatch, read `prd.md` Skill 路由 and 复用决策. Required task skil
      instead of dispatching sub-agents. -->
 
 [workflow-state:in_progress-inline]
-Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> capture `result.md` (Phase 2.4) -> candidate ownership review -> optional Knowledge `capture` and one `finalize` call (Phase 3.3) -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> capture `result.md` (Phase 2.4) -> candidate ownership review -> optional Knowledge `capture` and one `finalize` call (Phase 3.3) -> show commit plan and wait for explicit user confirmation -> commit only -> show archive status and wait for explicit user confirmation -> optional `/trellis:finish-work`.
+External-state gate: `批准实施` never authorizes commit, archive, session recording or push. Before each such action output `[trellis] 阶段=<阶段> 动作=<动作> 状态=等待用户确认`; pending external/physical validation keeps the task in progress unless the user explicitly approves archiving with pending items.
 Do not dispatch implement/check sub-agents in inline mode.
 Read context: `prd.md` -> `design.md if present` -> `implement.md if present`, plus relevant spec/research loaded by skills.
 After `trellis-before-dev`, read `prd.md` Skill 路由 and 复用决策, then load required implementation or verification skills before editing. Conditional skills require their trigger to be recorded before use.
@@ -325,7 +346,7 @@ After `trellis-before-dev`, read `prd.md` Skill 路由 and 复用决策, then lo
      channel as the live blocks. -->
 
 [workflow-state:completed]
-Code committed. Run `/trellis:finish-work`; if dirty, return to Phase 3.4 first.
+Task was explicitly archived. Do not infer archive or push from this state; push remains a separate user-authorized operation. If the task is only code-complete but external validation is pending, it must not enter this state.
 [/workflow-state:completed]
 
 ### Rules
@@ -763,18 +784,18 @@ Even if the conclusion is "nothing to update", walk through the judgment. Classi
 - Verified root causes, fixes, traps and reusable cross-project experience belong to the global knowledge base. If this owner subset is non-empty, output `[trellis] 阶段=收尾 动作=knowledge-capture 候选=<N>` and invoke Knowledge `capture` exactly once; `capture` may split, merge or reject rows and must write the resulting `K1..KN` candidates back to `result.md`.
 - If at least one Knowledge candidate remains, output `[trellis] 阶段=收尾 动作=knowledge-finalize 候选=<N>` and invoke Knowledge `finalize` exactly once for the whole list. Obey its configuration, deduplication, evidence and audit rules, then write every candidate's independent result back to `result.md`. If write is disabled, record `已关闭`; do not claim success.
 - Global reusable methods are updated only in the skill that owns them; do not duplicate them into `.trellis/spec/`.
-- Only after the user confirms that a candidate is a long-lived project-local exception, load `trellis-update-spec` and write it to `.trellis/spec/`.
+- Only after the user confirms that a candidate is a long-lived project coding convention or a specialization of the Trellis baseline, load `trellis-update-spec` and write it to `.trellis/spec/`.
 - Confirmed project facts belong in README or another authoritative project document.
 - Unverified, paused, one-off or temporary debugging notes remain in `result.md`, `research/` or verification status; they are not reusable knowledge.
 - If no reusable candidate exists, record "本次未发现需要沉淀的可复用结论" in `result.md`.
 - Do not invoke Knowledge `review` as part of ordinary task completion. Historical review backlog never blocks this task. A Knowledge `已捕获` result remains task evidence and does not block archive by itself.
 - Do not continue to commit or archive while this task still has an unresolved ownership decision or a Knowledge `待确认` result. Other Knowledge results and unrelated historical notes do not block the task.
 
-#### 3.4 Commit changes `[required · once]`
+#### 3.4 Commit changes `[required · once, user-confirmed]`
 
 **Durable-record preamble**: before drafting commits, confirm that `result.md` exists and ask whether this task fixed a bug, established a long-lived project decision, or surfaced non-obvious knowledge that needs ownership handling. If yes, return to Phase 3.3 first. Do not archive the task while a candidate owner or `knowledge` confirmation is pending.
 
-The AI drives a batched commit of this task's code changes so `/finish-work` can run cleanly afterwards. Goal: produce work commits FIRST, then bookkeeping (archive + journal) commits land after — never interleaved.
+The AI prepares a batched commit plan for this task's code changes. A commit is an external state change and requires a separate user confirmation; `批准实施` and `批准检查` do not authorize it. Produce work commits FIRST, then stop and wait for separate archive authorization. Never combine work, archive, journal or push operations in one inferred flow.
 
 **Step-by-step**:
 
@@ -796,7 +817,7 @@ The AI drives a batched commit of this task's code changes so `/finish-work` can
 
 4. **Draft a commit plan**. Group AI-edited files into logical commits (1 commit per coherent change unit, not 1 commit per file). Each entry: `<commit message>` + file list. List unrecognized files separately at the bottom.
 
-5. **Present the plan once, ask for one-shot confirmation**. Format:
+5. **Present the plan once, ask for one-shot commit confirmation**. Format:
    ```
    Proposed commits (in order):
      1. <message>
@@ -809,22 +830,25 @@ The AI drives a batched commit of this task's code changes so `/finish-work` can
      - <file>
      - <file>
 
-   Reply 'ok' / '行' to execute. Reply with edits, or '我自己来' / 'manual' to abort.
+   Reply 'ok' / '行' to execute only these work commits. Reply with edits, or '我自己来' / 'manual' to abort.
    ```
 
 6. **On confirmation**: run `git add <files>` + `git commit -m "<msg>"` for each batch in order. Do not amend. Do not push.
 
-7. **On rejection** (user replies "不行" / "我自己来" / "manual" / any pushback on the plan): stop. Do not attempt a second plan. The user will commit by hand; you skip ahead to 3.5 once they confirm.
+7. **After the work commit**: output `[trellis] 阶段=归档 动作=等待用户确认 状态=待归档` and stop. Do not invoke `task.py archive`, `/finish-work`, `add_session.py` or `git push` in the same turn.
+
+8. **On rejection** (user replies "不行" / "我自己来" / "manual" / any pushback on the plan): stop. Do not attempt a second plan. The user will commit by hand; remain in the task until they explicitly decide the next lifecycle action.
 
 **Rules**:
 - No `git commit --amend` anywhere — three-stage three-commit flow (work commits → archive commit → journal commit).
 - Never push to remote in this step.
 - If the user wants different message wording but accepts the file grouping, edit the message and re-confirm once — but if they reject the grouping, exit to manual mode.
 - The batched plan is one prompt; do not prompt per commit.
+- The commit confirmation authorizes only the displayed work commits. It does not authorize archive, journal/session recording or push.
 
 #### 3.5 Wrap-up reminder
 
-After the above, remind the user they can run `/finish-work` to wrap up (archive the task, record the session).
+Archive is a separate user-authorized operation. Before invoking `/finish-work` or `task.py archive`, verify that all external/physical acceptance items are complete. If any remain pending, keep the task in progress and report them; archive only after the user explicitly approves archiving with those items pending. After archive is explicitly authorized, output `[trellis] 阶段=归档 动作=执行 状态=用户已确认`; use `task.py archive <task> --no-commit` unless the user separately authorizes a bookkeeping commit. Session recording is also separate and must not be inferred. Push is never part of wrap-up and requires its own explicit request.
 
 ---
 
