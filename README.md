@@ -4,9 +4,13 @@
 
 ## 提供内容
 
-- `skill-routed-native`：以 Trellis `native` Workflow 为基线的通用任务工作流。它保留原生任务生命周期、`auto/inline` 执行分支、规划、实施、检查、验证和归档契约；在此基础上增加当前会话全局 Skill 的发现与路由、当前项目/知识库/Demo 复用决策、Knowledge 的 `query/capture/finalize` 动作路由、`result.md` 逐候选结果记录、项目功能与 Bug 变更索引、项目长期决策索引、外部验证测试卡，以及重复失败后的诊断复盘。
+- `skill-routed-native`：以 Trellis `native` Workflow 为基线的通用任务工作流。它保留原生任务生命周期、`auto/inline` 执行分支、规划、实施、检查、验证和归档契约；在此基础上增加当前会话全局 Skill 的发现与路由、当前项目/Demo 复用决策、`result.md` 逐候选结果记录、项目功能与 Bug 变更索引、项目长期决策索引、外部验证测试卡，以及重复失败后的诊断复盘。
 
 `skill-routed-native` 不固定绑定任何领域 Skill。它要求任务规划时按领域、决策、构建、测试、诊断、审查与交付等通用能力维度筛选候选，并在 PRD 中记录 Skill 路由与复用决策。Skill 必须由用户环境全局安装，Registry 不负责安装。项目仍按 Trellis 正式 `codex.dispatch_mode` 配置使用原生 `auto` 或 `inline` 分支；本 Registry 不改变该配置，也不替换官方的实施和检查链路。
+
+工作流先按任务价值和风险分流：简单问答、只读查询和低风险且范围自包含的小任务直接处理，不询问是否创建 Trellis Task；需要跨会话接续、明确项目记录或涉及复杂设计与多范围修改时，才询问是否创建 Task。直接处理只跳过 Trellis 任务生命周期，不跳过项目规则、适用的全局 Skill 和必要验证；范围扩大时必须重新分流。
+
+项目记录遵循单一事实源：优先复用项目已有的变更日志和决策记录；没有等价文档时，才创建 `docs/变更记录/项目变更记录.md` 或 `docs/决策/项目决策记录.md`。没有持久化候选的任务只在 `result.md` 写明结论，不生成空表。任务首次进入规划、实施、检查和收尾时各输出一次 `[trellis]` 阶段提示。
 
 ## 授权与收尾边界
 
@@ -84,11 +88,8 @@ trellis init --codex --no-monorepo -u <用户名> -y `
 | 来源 | 操作 | 决定 | 触发条件或查询目标 | 结果与边界 |
 |---|---|---|---|---|
 | 当前项目 | 读取事实 | 直接处理 / 需要补充事实 | `<权威项目资料>` | `<已确认事实或待确认项>` |
-| 全局知识库 | `query` | 必须查询 / 条件性 / 不查询 / 已关闭 | `<技术对象、现象、环境或历史问题>` | `<命中和适用性>` |
 | 参考 Demo | 查询 | 必须查询 / 条件性 / 不查询 | `<接口形式或稳定写法>` | `<复用与禁止照搬边界>` |
 ```
-
-Trellis 只按稳定动作名调用全局 `knowledge` Skill，不绑定 Knowledge 的发布版本。规划或诊断阶段使用 `query`；最终检查形成真实证据后，Phase 3.3 先判断候选归属，再对全局知识库子集分别至多调用一次 `capture` 和 `finalize`。`review` 只由用户明确请求或专门的知识维护任务调用。
 
 ## 发布前验证
 
@@ -97,15 +98,12 @@ $null = Get-Content -Raw -Encoding utf8 marketplace/index.json | ConvertFrom-Jso
 Test-Path marketplace/workflows/skill-routed-native.md
 Test-Path marketplace/specs/empty/README.md
 Test-Path marketplace/specs/empty/guides/index.md
-Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '动作=knowledge-query'
-Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '动作=knowledge-capture'
-Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '动作=knowledge-finalize'
 Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '批准实施 != 批准检查 != 批准提交'
 Select-String -Path marketplace/workflows/skill-routed-native.md -SimpleMatch '阶段=归档 动作=等待用户确认'
 git diff --check
 ```
 
-还应在提交推送后通过远端 Registry 在空目录执行一次完整 `trellis init`；CLI 不支持本地路径作为 Registry，不得用手工复制代替初始化验证。确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 已按项目类型生成官方通用 backend/frontend/guides 规范。检查安装后的 Workflow 同时包含原生 `trellis-brainstorm`、`trellis-before-dev`、`trellis-check`、`task.py validate`、`codex.dispatch_mode` 分支和本 Registry 的 `Skill 路由`、`复用决策`、Knowledge `query/capture/finalize` 动作、`[trellis]` 提示、`result.md`、项目变更记录、项目决策记录与逐候选归属判断。首次复杂任务进入规划时，确认 PRD 会记录 Skill 与复用结论。
+还应在提交推送后通过远端 Registry 在空目录执行一次完整 `trellis init`；CLI 不支持本地路径作为 Registry，不得用手工复制代替初始化验证。确认 `.trellis/workflow.md` 来自本 Registry，`.trellis/spec/` 已按项目类型生成官方通用 backend/frontend/guides 规范。检查安装后的 Workflow 同时包含原生 `trellis-brainstorm`、`trellis-before-dev`、`trellis-check`、`task.py validate`、`codex.dispatch_mode` 分支和本 Registry 的 `Skill 路由`、`复用决策`、`[trellis]` 提示、`result.md`、项目变更记录、项目决策记录与逐候选归属判断。首次复杂任务进入规划时，确认 PRD 会记录 Skill 与复用结论。
 
 ## 更新已初始化项目
 
@@ -122,7 +120,7 @@ trellis workflow --template skill-routed-native `
 ## 维护边界
 
 - Workflow 以当前 Trellis 原生 Workflow 为上游基线，并仅增加任务阶段、Skill 路由与知识归属规则；不复制领域 Skill 内容，也不固定绑定某个领域 Skill。Trellis CLI 升级后必须先对照新的原生 Workflow，再迁移本 Registry 扩展。
-- 领域代码规则由相应全局 Skill 维护；跨项目已验证经验由全局 `knowledge` Skill 管理；项目事实、任务范围、验收、调研过程与单次结论由项目事实和任务文档维护。项目内只为行为变更与 Bug 修复维护 `docs/变更记录/项目变更记录.md`，只为用户确认且影响后续工作的长期项目决策维护 `docs/决策/项目决策记录.md`；不额外维护项目概览、当前状态或滚动快照。
+- 领域代码规则和跨项目通用方法由相应全局 Skill 维护；项目事实、任务范围、验收、调研过程、根因与单次结论由项目事实和任务文档维护。项目变更与长期决策分别写入项目已有的等价记录；没有等价记录时才使用默认中文路径。不额外维护项目概览、当前状态或滚动快照。
 - 新项目保留 Trellis 按项目类型生成的通用 Spec；`empty-spec` 只为旧项目兼容保留，不再作为初始化默认值。项目本地补充不得复制或覆盖全局 Skill 的整套领域方法。
 - 本 Registry 只维护 Marketplace workflow 与空 Spec 模板；不修改 npm 安装目录、不强制 `codex.dispatch_mode`、不伪造 Agent 调度配置，领域 Skill 仍由用户环境维护。
 - 不新增未经 CLI 验证的 Hook、门禁或自动化。
