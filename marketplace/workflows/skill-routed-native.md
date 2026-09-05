@@ -8,88 +8,43 @@
 >
 > 语言说明：本文件正文使用简体中文，便于项目开发时直接阅读。状态标签、平台标记、命令、路径和机器可读字段保持原样，确保 Trellis 解析与升级核对不受影响。其中 `## Phase Index` 和 `## Phase 1: Plan` 是官方解析器使用的精确边界标题，禁止翻译、添加中文后缀或调整字符。
 
-## Registry 自定义索引
-
-本索引只标识相对官方 `native 0.6.14` 发生的行为差异，不把中文翻译视为自定义。标题以 `Registry 扩展` 开头的章节均为本 Registry 新增；下表列出其余嵌入原生阶段的自定义。未列入本索引的内容保持官方原生语义。
-
-| 位置 | 类型 | Registry 自定义内容 |
-|---|---|---|
-| 核心原则 5-7 | 改写 / 新增 | 将原生的统一 Spec 回写改为按归属持久化，并增加全局 Skill 发现和事实唯一归属。 |
-| `Registry 扩展：全局 Skill 发现与路由` | 新增 | 发现当前会话可用 Skill，将选用阶段、条件和原因记录到 PRD。 |
-| `Registry 扩展：项目与 Demo 路由` | 新增 | 先核对项目事实，再决定是否查询 Demo，并记录允许复用的边界。 |
-| `Registry 扩展：事实、项目 Spec 与复用边界` | 新增 | 区分项目事实、任务产物、项目记录、本地 Spec 和全局 Skill 的职责。 |
-| Trellis 系统 / Spec 系统 | 增补 | 保留官方 Spec 基线，只把已确认的项目约定写入本地 Spec。 |
-| Trellis 系统 / Task 系统 | 增补 | 将 `result.md` 纳入任务产物。 |
-| Trellis 系统 / 授权与外部状态门禁 | 新增 | 分离规划、实施、检查、提交、归档、会话记录和推送授权。 |
-| Phase Index / 请求分流 | 改写 | 简单、只读或低风险自包含工作可直接处理；需要持续追踪时才创建任务。 |
-| Phase Index / 规划产物 | 增补 | PRD 增加 Skill 路由和复用决策，并增加 `result.md` 结果产物。 |
-| Phase Index / 状态标签、活动任务路由和护栏 | 增补 / 改写 | 增加 Skill/Demo 路由、结果记录、长期记录归属、可见 `[trellis]` 阶段提示和独立授权门禁。 |
-| Phase 1 / 1.0、1.1、1.4、1.5 | 增补 | 增加阶段提示、Skill/Demo 评估、`task.py validate` 预检和路由就绪条件。 |
-| Phase 2 / 2.1、2.2 | 增补 | 实现前加载已路由 Skill；每批代码按路由检查，并区分代码、构建和外部验证。 |
-| Phase 2 / 外部验证与失败停止 | 新增 | 使用单变量测试卡；同一现象连续失败后停止试错并进入诊断复盘。 |
-| Phase 2 / 2.4 记录结果 | 新增 | 生成 `result.md`，记录实际变更、验证状态、Bug 根因和持久化候选。 |
-| Phase 3 / 3.3 | 改写 | 将原生的统一 Spec 更新改为候选归属判断，再按确认结果更新项目记录、本地 Spec 或全局 Skill。 |
-| Phase 3 / 3.4、3.5 | 改写 | 提交、归档、会话记录和推送分别授权；存在未决外部验证时默认不归档。 |
-| 自定义 Trellis / 修改步骤含义 | 增补 | 同步本 Registry 的直接处理边界以及提交、归档前置要求。 |
-
 ## 核心原则
 
 1. **先规划再编码**：开始实现前，先明确要解决的问题、边界和验收方式。
 2. **注入规范而不是凭记忆**：通过 Hook 或 Skill 注入规范，不要求 AI 依靠上下文记住全部规则。
-3. **持久化重要信息**：研究、决策和经验写入文件；对话可能被压缩，文件不会因此丢失。
+3. **持久化重要信息**：研究、决策和任务结果写入文件；对话可能被压缩，文件不会因此丢失。
 4. **增量开发**：一次处理一个可验证的任务。
-5. **记录可复用结论**：任务结束后识别长期有效的结论，只写入已经确认的归属位置。
-6. **先发现 Skill 再路由**：选择任务能力前，检查当前会话实际可用的全局 Skill。
-7. **每类事实都有唯一归属**：项目事实写入权威项目文档；任务决策和已验证根因写入任务产物；长期项目决策写入项目决策记录；可复用方法写入所属全局 Skill。
+5. **结果可追溯**：发生实际修改时，用 `result.md` 记录原因、结果和验证状态。
+6. **先发现 Skill 再路由**：从当前会话声明的可用 Skill 中选择任务所需能力，不自行扫描安装目录。
+7. **信息归属明确**：项目事实、任务结果、项目编码约定和用户阅读的项目记录分别保存，不维护重复来源。
 
 ---
 
-## Registry 扩展：全局 Skill 发现与路由
+## Registry 扩展：Skill 发现与路由
 
-Trellis 负责任务生命周期、任务产物、上下文和通用检查。它不会安装、复制或永久绑定某个领域、框架或产品 Skill。在进入实现规划前，先发现当前会话可用的全局 Skill，阅读候选 Skill 的说明，再把路由结果记录到 `{TASK_DIR}/prd.md`。
+Trellis 只评估当前会话已经声明可用的 Skill，不区分全局或项目来源，也不负责安装 Skill。进入实现前，把实际相关的 Skill 路由记录到 `{TASK_DIR}/prd.md`。
 
 ```markdown
 ## Skill 路由
 
-候选发现：已根据任务范围、技术栈、风险和验证目标筛选当前会话可用的 Skill。
-
-| Skill | 决定 | 使用阶段 | 触发范围 | 原因 |
-|---|---|---|---|---|
-| `<skill-name>` | 必需 / 条件性 / 不使用 / 待用户调用 | 规划 / 实施 / 检查 / 诊断 / 收尾 | `<条件或边界>` | `<结论依据>` |
+| Skill | 使用方式 | 使用阶段 | 原因或触发条件 |
+|---|---|---|---|
+| `<skill-name>` | 自动 / 条件 / 待用户调用 | 规划 / 实施 / 检查 / 诊断 / 收尾 | `<为什么需要，或何时触发>` |
 ```
 
-- 候选评估至少覆盖：领域与技术栈、需求与架构、实现与构建、测试与验证、诊断与调试、审查与质量、文档与交付。不相关的类别可以合并记录为“不使用”，不需要列出全部已安装 Skill。
-- 标注为必须手动调用的 Skill，只能记录为“待用户调用”，不能声称它会自动运行。
-- 必需 Skill 必须在对应阶段开始前加载；条件性 Skill 只有在触发条件成立后才加载。
+- 只记录与任务实际相关的 Skill，不记录“不使用”的 Skill。
+- 自动 Skill 在对应阶段开始前加载；条件 Skill 仅在触发条件成立后加载。
+- 明确要求用户手动调用的 Skill，在用户指定前记录为“待用户调用”。
 - 任务范围、技术栈、风险或验证目标发生变化时，重新评估路由，并在继续之前更新 `prd.md`。
-- 不要在本 Workflow 中维护“领域到 Skill”的固定映射表。Skill 自己负责匹配和实现规则，本 Workflow 只记录当前任务的实际决定。
+- 本 Workflow 不维护领域到 Skill 的固定映射，也不修改 Skill 定义。
 
-## Registry 扩展：项目与 Demo 路由
+## Registry 扩展：事实与项目 Spec 边界
 
-Trellis 判断任务是否需要读取当前项目事实或参考 Demo；具体的查询和复用规则由选中的领域 Skill 负责。项目事实和验收标准明确后，在 `prd.md` 中加入下面这张任务专属表：
-
-```markdown
-## 复用决策
-
-| 来源 | 操作 | 决定 | 触发条件或查询目标 | 结果与边界 |
-|---|---|---|---|---|
-| 当前项目 | 读取事实 | 直接处理 / 需要补充事实 | `<README、Doc、原理图、代码或官方资料>` | `<已确认事实或待确认项>` |
-| 参考 Demo | 查询 | 必须 / 条件性 / 不查询 | `<接口形式、目录结构或稳定写法>` | `<允许复用与禁止照搬的边界>` |
-```
-
-- 先读取权威项目事实。影响当前设计或实现的事实缺失时必须暂停；不能用 Demo 的猜测补齐。
-- 当领域 Skill 要求保持接口形式、目录结构或已验证写法一致时，才查询 Demo。允许复用的内容由领域 Skill 决定；未经当前项目确认，不得从 Demo 复制板级、产品、凭据、协议或环境事实。
-- 当前项目事实已经充分且没有 Demo 触发条件时，可以直接推理，不要为了形式执行查询。
-- 任务范围、现象、技术栈或验证目标发生实质变化时，继续之前同时更新 `Skill 路由` 和 `复用决策`。
-
-## Registry 扩展：事实、项目 Spec 与复用边界
-
-- README、产品文档、原理图、权威 API 和项目证据负责保存真实项目事实。
-- `.trellis/spec/` 以 Trellis 提供的包/层级指南为基础，可以根据已确认的项目编码约定进行细化。它必须与真实代码保持一致，不能把某个全局 Skill 的完整领域流程复制进来。
-- 任务的 `prd.md`、`design.md`、`implement.md`、`result.md` 和 `research/` 只记录本次任务的范围、决策、证据、调查、实际结果和验证。
-- 写入项目记录前先确定唯一归属。项目已有等价的变更记录或决策记录时直接复用；没有时，行为变化和 Bug 修复使用 `docs/变更记录/项目变更记录.md`，用户确认的长期决策使用 `docs/决策/项目决策记录.md`。只有出现第一条符合条件的记录时才创建文件，不要为同一职责维护并行文件。
-- 任务中发现的长期结论，必须先完成归属分类再写入。归属只能是项目决策记录、全局 Skill、项目本地 Spec、项目事实文档或仅任务结果，并遵守对应归属的确认和审计规则。
-- 不要重新创建 `项目概览`、`当前状态` 或滚动任务快照作为另一套记忆系统。权威项目文档、Trellis 任务产物、上述两个项目索引和 Git 已经承担这些职责。
+- README 是项目事实入口，任务开始时优先读取；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的实现并请用户确认。
+- `.trellis/spec/` 只保存用户确认的项目编码约定或 Trellis 基线的项目化细化；写入前必须得到用户确认。
+- `prd.md`、`design.md`、`implement.md`、`result.md` 和 `research/` 只记录当前任务。
+- `docs/项目记录/项目记录.md` 只面向用户快速阅读，不作为 AI 的项目事实或开发上下文。AI 查询历史时读取对应任务的 `result.md`。
+- 不创建其他项目概览、当前状态或滚动任务快照。
 
 ## Trellis 系统
 
@@ -110,13 +65,13 @@ python3 ./.trellis/scripts/init_developer.py <your-name>
 - `.trellis/spec/<package>/<layer>/index.md` 是入口，包含**开发前检查**和**质量检查**；具体规则写在它引用的 `.md` 文件中。
 - `.trellis/spec/guides/index.md` — cross-package thinking guides.
 
-Registry 规则：保留 Trellis 提供的 backend/frontend/guides 基线，并根据真实代码示例确认过的项目约定进行细化。通用领域方法和生命周期流程继续放在负责它们的全局 Skill 中。
+Registry 规则：保留 Trellis 提供的 backend/frontend/guides 基线，并根据真实代码示例确认过的项目约定进行细化。任务生命周期由本 Workflow 负责，通用领域方法由对应 Skill 负责。
 
 ```bash
 python3 ./.trellis/scripts/get_context.py --mode packages   # list packages / layers
 ```
 
-**何时更新项目本地 Spec**：项目形成了已确认且长期有效的编码约定，或 Trellis 基线需要根据真实代码进行项目化细化；并且该结论不属于全局 Skill 或项目事实文档，用户也确认由本地 Spec 负责。
+**何时更新项目本地 Spec**：项目形成了已确认且长期有效的编码约定，或 Trellis 基线需要根据真实代码进行项目化细化；并且该结论不属于适用 Skill 或项目事实文档，用户也确认由本地 Spec 负责。
 
 ### Task 系统
 
@@ -158,22 +113,13 @@ python3 ./.trellis/scripts/task.py create-pr [name] [--dry-run]
 
 ### 授权与外部状态门禁
 
-Trellis 任务状态和 Git 状态彼此独立。本轮将下列操作视为相互独立的授权：
+`task.py start` 后，实施、检查、修复和复查连续执行，不再逐阶段请求授权。以下操作仍有独立边界：
 
-```text
-批准规划  !=  批准实施
-批准实施  !=  批准检查
-批准检查  !=  批准提交
-批准提交  !=  批准归档
-批准归档  !=  批准推送
-```
-
-- `批准实施` 只授权当前预检/检查点中列出的文件和动作，绝不包含 `git add`、`git commit`、`task.py archive`、`/finish-work`、`add_session.py` 或 `git push`。
-- 只有在紧接着已展示的提交计划之后，`ok` 或“行”才表示批准提交。批准规划、批准实施或笼统的“继续/完成”都不表示批准提交或归档。
-- 如果要编辑当前允许范围之外的差异，必须先停止，更新范围和验证计划，并取得扩大范围的批准。
-- 工作提交、任务归档、日志/会话记录和推送是相互独立的外部状态操作。每次操作前都要输出可见的 `[trellis]` 行，说明阶段、动作和所需确认；只执行用户在当前轮明确确认的操作，不能从之前的批准推断下一步。
-- 任何外部、实物或用户验收项仍为 `待用户验证` 或未勾选时，任务保持进行中，默认不得归档。带未决验证项归档必须得到用户明确批准，并在 `result.md` 保留未决项。构建成功或静态审查通过不等于外部验证通过。
-- Trellis 不会静默改变 CLI 的记账默认值。如果项目不希望归档/会话命令创建 Git 提交，应设置 `session_auto_commit: false`，或在归档已获授权后使用 `task.py archive <task> --no-commit`。该设置不等于归档授权，也不影响工作提交。
+- Git 提交前展示提交计划并取得用户当轮明确授权；授权只覆盖所展示的提交，不包含收尾或推送。
+- Git 提交完成后，单独询问是否进行 Trellis 收尾。收尾授权包含任务归档、会话记录及其正常记账提交，不包含推送。
+- 推送必须由用户单独明确要求。
+- 外部、实物或用户验收尚未完成时默认不收尾；只有用户明确允许带未验证项收尾时才可继续，并在 `result.md` 保留未验证内容。
+- 修改范围需要扩大时，先更新范围和验证计划并取得用户确认。
 
 ### 工作区系统
 
@@ -214,15 +160,15 @@ python3 ./.trellis/scripts/get_context.py --mode phase --step <X.Y>  # detailed 
     提交门禁都曾因该缺口被跳过）。
 
   标签与阶段的对应关系：
-[workflow-state:no_task]      → 没有活动任务；Phase 1 之前
-[workflow-state:planning]     → Phase 1 全部内容（status='planning'）
-[workflow-state:planning-inline] → Codex inline 模式的 Phase 1
-    [workflow-state:in_progress]  → Phase 2 + Phase 3.2-3.4
-                                    （从 task.py start 到 task.py archive 前，状态保持为 in_progress）
-[workflow-state:in_progress-inline] → Codex inline 模式的 Phase 2/3
-    [workflow-state:completed]    → 当前不会触发：cmd_archive 在同一次调用中修改状态并
-                                    移动任务目录，解析器因此丢失指针（保留此块供未来显式的
-                                    in_progress->completed 状态迁移使用）
+    [workflow-state:no_task]            → 没有活动任务；Phase 1 之前
+    [workflow-state:planning]           → Phase 1 全部内容（status='planning'）
+    [workflow-state:planning-inline]    → Codex inline 模式的 Phase 1
+    [workflow-state:in_progress]        → Phase 2 + Phase 3.2-3.4
+                                          （从 task.py start 到 task.py archive 前，状态保持为 in_progress）
+    [workflow-state:in_progress-inline] → Codex inline 模式的 Phase 2/3
+    [workflow-state:completed]          → 当前不会触发：cmd_archive 在同一次调用中修改状态并
+                                          移动任务目录，解析器因此丢失指针（保留此块供未来显式的
+                                          in_progress->completed 状态迁移使用）
 
   编辑检查清单：
     - 修改 [workflow-state:STATUS] 标签块时，同时检查所属阶段的
@@ -242,7 +188,7 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 
 ### 请求分流
 
-- 简单对话、只读查询或低风险且自包含的小任务：直接处理，不要求创建 Trellis 任务。这里只跳过 Trellis 任务生命周期；仓库规则、适用的全局 Skill 和适当的验证仍然适用。
+- 简单对话、只读查询或低风险且自包含的小任务：直接处理，不要求创建 Trellis 任务。这里只跳过 Trellis 任务生命周期；仓库规则、当前会话中适用的 Skill 和适当的验证仍然适用。
 - 需要跨会话连续性或明确项目记录的轻量任务：先请求创建任务的同意，再优先使用只有 PRD 的路径；如果出现设计或执行复杂度，再升级为完整规划。
 - 复杂任务：先询问是否可以创建 Trellis 任务并进入规划。如果用户不同意，不进行大范围的直接实现，而是解释、澄清范围或建议拆分为更小任务。
 - 如果直接处理的工作超出自包含小任务范围，必须在大范围实现前停止并重新分流。用户同意创建任务不等于同意开始实现；仍需先完成规划。
@@ -250,11 +196,10 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 ### 规划产物
 
 - `prd.md`：需求、约束和验收标准。不要在这里写技术设计或执行清单。
-- `prd.md` 同时记录当前任务的 `## Skill 路由` 结果。它说明需要哪些能力以及由哪个阶段负责，不是技术设计，也不能替代所属 Skill。
-- `prd.md` 记录当前任务的 `## 复用决策`：当前项目事实和参考 Demo。只记录决定与证据，不复制 Demo 代码。
+- `prd.md` 同时记录当前任务的 `## Skill 路由`，只列出实际相关的 Skill。
 - `design.md`：复杂任务的技术设计，包括边界、契约、数据流、取舍、兼容性和发布/回滚形态。
 - `implement.md`：复杂任务的执行计划，包括有序清单、验证命令、审查门禁和回滚点。
-- `result.md`：实际修改原因、结果、验证状态、未决风险和可选的 Bug 分析。实现和最终检查后创建；它不是第二份 PRD，也不是 diff 的复制品。
+- `result.md`：发生实际修改时创建，记录原因、实际结果和验证状态。
 - `implement.jsonl` / `check.jsonl`：注入子代理上下文的 Spec 和研究清单，不能替代 `implement.md`。
 - 轻量任务可以只有 PRD。复杂任务必须在 `task.py start` 前具备并审查 `prd.md`、`design.md` 和 `implement.md`。
 
@@ -270,12 +215,12 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 
 [workflow-state:no_task]
 当前没有活动任务。先判断本轮请求；只有确实需要 Trellis 追踪时才请求创建任务。
-简单对话、只读查询或低风险且自包含的小任务：直接处理，不要求创建任务。仓库规则、适用的全局 Skill 和适当的验证仍然适用。如果范围扩大，必须在大范围实现前停止并重新分流。
+简单对话、只读查询或低风险且自包含的小任务：直接处理，不要求创建任务。仓库规则、当前会话中适用的 Skill 和适当的验证仍然适用。如果范围扩大，必须在大范围实现前停止并重新分流。
 需要跨会话连续性或明确项目记录的轻量工作：请求创建任务的同意，然后优先使用只有 PRD 的路径。
 复杂任务：询问用户是否允许创建 Trellis 任务并进入规划。如果用户不同意，解释情况、澄清范围或建议拆成更小的任务。
 [/workflow-state:no_task]
 
-### Phase 1: 规划
+### Phase 1 摘要：规划
 - 1.0 创建任务 `[required · once]`（仅在用户同意创建任务后）
 - 1.1 需求探索 `[required · repeatable]`（写入 `prd.md`；复杂任务还需要 `design.md` 和 `implement.md`）
 - 1.2 研究 `[optional · repeatable]`
@@ -287,10 +232,11 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 
 [workflow-state:planning]
 加载 `trellis-brainstorm`，保持在规划阶段。
+优先读取项目 README；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
 轻量任务：可以只使用 `prd.md`。复杂任务：完成 `prd.md`、`design.md` 和 `implement.md`，并在 `task.py start` 前请求审查。
 多个交付物：考虑使用父任务和可独立验证的子任务；依赖关系必须写入子任务产物，不能依靠树的位置暗示。
 子代理模式：在 start 前整理 `implement.jsonl` 和 `check.jsonl`，作为 Spec/研究清单。
-激活前，发现并把当前任务的全局 Skill 路由和复用决定记录到 `prd.md`；加载必需的规划 Skill，把只能手动调用的 Skill 记录为“待用户调用”。
+激活前，把实际相关的 Skill 路由记录到 `prd.md`，并加载规划阶段需要的 Skill。
 [/workflow-state:planning]
 
 <!-- 每轮提示：codex.dispatch_mode=inline 时在 Phase 1 全程显示。
@@ -300,17 +246,18 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 
 [workflow-state:planning-inline]
 加载 `trellis-brainstorm`，保持在规划阶段。
+优先读取项目 README；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
 轻量任务：可以只使用 `prd.md`。复杂任务：完成 `prd.md`、`design.md` 和 `implement.md`，并在 `task.py start` 前请求审查。
 多个交付物：考虑使用父任务和可独立验证的子任务；依赖关系必须写入子任务产物，不能依靠树的位置暗示。
 Inline 模式：跳过 JSONL 整理；Phase 2 通过 `trellis-before-dev` 读取产物和 Spec。
-激活前，发现并把当前任务的全局 Skill 路由和复用决定记录到 `prd.md`；加载必需的规划 Skill，把只能手动调用的 Skill 记录为“待用户调用”。
+激活前，把实际相关的 Skill 路由记录到 `prd.md`，并加载规划阶段需要的 Skill。
 [/workflow-state:planning-inline]
 
-### Phase 2: 实施
+### Phase 2 摘要：实施
 - 2.1 实现 `[required · repeatable]`
 - 2.2 质量检查 `[required · repeatable]`
 - 2.3 回滚 `[on demand]`
-- 2.4 记录结果 `[required · once]`
+- 2.4 记录结果 `[conditional · once]`（发生实际修改时）
 
 <!-- 每轮提示：status='in_progress' 时显示。
      范围是 Phase 2 和 Phase 3.2-3.4 的全部内容（从 task.py start 到
@@ -320,12 +267,11 @@ Inline 模式：跳过 JSONL 整理；Phase 2 通过 `trellis-before-dev` 读取
 子代理派发协议适用于所有平台和子代理，包括使用原生 Codex `SubagentStart` 注入上下文并保留子代理主动读取方式的平台、Gemini/Qoder/Copilot/Reasonix/Trae/Grok/Kimi Code、由 Hook 支持的 ZCode/Snow，以及 `trellis-research`。每个派发提示都必须先写 `Active task: <task path from task.py current>`，再写角色说明。在 Grok Build 中，使用 `spawn_subagent`，并将 `subagent_type` 设置为 Trellis 代理名称（例如 `trellis-implement`）。在 Kimi Code 中，使用内置的 `coder` / `explore` 子代理，并遵循对应的 `.kimi-code/skills/trellis-<role>/SKILL.md` 指令。
 
 [workflow-state:in_progress]
-工具：`trellis-implement` / `trellis-research` 仅是子代理类型（由 Task/Agent 工具使用，不是 Skill；不存在同名 Skill）。`trellis-check` 同时存在两种形式；代码修改后进行验证时优先使用 Agent 形式。只有在用户确认某候选属于项目本地 Spec 后，才可以加载 `trellis-update-spec`。
-流程：`trellis-implement` -> `trellis-check` -> 记录 `result.md`（Phase 2.4）-> 审查候选归属并更新长期记录（Phase 3.3）-> 展示提交计划并等待用户明确确认 -> 只执行提交 -> 展示归档状态并等待用户明确确认 -> 可选执行 `/trellis:finish-work`。
-外部状态门禁：`批准实施` 不包含提交、归档、会话记录或推送。每次执行这些动作前都输出 `[trellis] 阶段=<阶段> 动作=<动作> 状态=等待用户确认`；外部/实物验证未完成时，除非用户明确批准带未决项归档，否则任务保持进行中。
+工具：`trellis-implement` / `trellis-research` 是子代理类型；`trellis-check` 同时存在代理和 Skill 形式，代码修改后优先使用代理检查。
+流程：实施 -> 检查并修复 -> 有实际修改时记录 `result.md` -> 更新项目记录或确认本地 Spec -> 请求提交授权 -> 请求收尾授权。
 主会话默认派发 implement/check 子代理。子代理自豁免：如果当前已经是 `trellis-implement`，不要再派发 `trellis-implement` 或 `trellis-check`；如果当前已经是 `trellis-check`，不要再派发 `trellis-check` 或 `trellis-implement`。派发动作只由主会话执行。
 派发提示必须以 `Active task: <task path from task.py current>` 开头。上下文读取顺序：JSONL 条目 -> `prd.md` -> 存在时读取 `design.md` -> 存在时读取 `implement.md`。
-派发前读取 `prd.md` 中的 Skill 路由和复用决策。实现或检查代理必须能够使用任务要求的 Skill；除正式的 implement/check 链之外，只能使用文档明确允许的、独立且只读的子代理。最终集成和结论由主会话负责。
+派发前读取 `prd.md` 中的 Skill 路由，确保实现或检查代理可以使用任务要求的 Skill。最终集成和结论由主会话负责。
 [/workflow-state:in_progress]
 
 <!-- 每轮提示：codex.dispatch_mode=inline 且 status='in_progress' 时显示。
@@ -333,16 +279,15 @@ Inline 模式：跳过 JSONL 整理；Phase 2 通过 `trellis-before-dev` 读取
      主会话直接编辑代码，不派发子代理。 -->
 
 [workflow-state:in_progress-inline]
-流程：`trellis-before-dev` -> 编辑 -> `trellis-check` -> 验证 -> 记录 `result.md`（Phase 2.4）-> 审查候选归属并更新长期记录（Phase 3.3）-> 展示提交计划并等待用户明确确认 -> 只执行提交 -> 展示归档状态并等待用户明确确认 -> 可选执行 `/trellis:finish-work`。
-外部状态门禁：`批准实施` 不包含提交、归档、会话记录或推送。每次执行这些动作前都输出 `[trellis] 阶段=<阶段> 动作=<动作> 状态=等待用户确认`；外部/实物验证未完成时，除非用户明确批准带未决项归档，否则任务保持进行中。
+流程：`trellis-before-dev` -> 编辑 -> `trellis-check` -> 验证 -> 有实际修改时记录 `result.md` -> 更新项目记录或确认本地 Spec -> 请求提交授权 -> 请求收尾授权。
 Inline 模式不派发 implement/check 子代理。
 上下文读取顺序：`prd.md` -> 存在时读取 `design.md` -> 存在时读取 `implement.md`，以及由 Skill 加载的相关 Spec/研究资料。
-执行 `trellis-before-dev` 后，读取 `prd.md` 中的 Skill 路由和复用决策，然后在编辑前加载必需的实现或验证 Skill。条件性 Skill 必须先记录触发条件，再加载使用。
+执行 `trellis-before-dev` 后读取 `prd.md` 中的 Skill 路由，在编辑前加载自动 Skill；条件 Skill 在触发后加载。
 [/workflow-state:in_progress-inline]
 
-### Phase 3: 收尾
+### Phase 3 摘要：收尾
 - 3.2 调试回顾 `[on demand]`
-- 3.3 候选归属与长期记录更新 `[required · once]`
+- 3.3 项目记录与 Spec 判断 `[required · once]`
 - 3.4 提交修改 `[required · once]`
 - 3.5 收尾提醒
 
@@ -355,7 +300,7 @@ Inline 模式不派发 implement/check 子代理。
      修改方式与其他活动标签块相同。 -->
 
 [workflow-state:completed]
-任务已由用户明确归档。不要从此状态推断需要归档或推送；推送仍是单独授权的操作。如果任务只是代码完成但外部验证仍未完成，不得进入此状态。
+任务已经完成 Trellis 收尾。新请求重新分流；推送仍需用户单独要求。
 [/workflow-state:completed]
 
 ### 规则
@@ -374,7 +319,7 @@ Inline 模式不派发 implement/check 子代理。
 
 - 规划或需求不清晰 -> `trellis-brainstorm`。
 - `in_progress` 状态下的实现/检查 -> 派发 `trellis-implement` / `trellis-check`。
-- 重复调试 -> `trellis-break-loop`；更新任何 Spec 前先审查候选归属。只有用户确认由项目本地 Spec 负责后，才加载 `trellis-update-spec`。
+- 重复调试 -> `trellis-break-loop`；用户确认更新本地 Spec 后 -> `trellis-update-spec`。
 
 [/Claude Code, Cursor, OpenCode, codex-sub-agent, Kiro, Gemini, Qoder, CodeBuddy, Copilot, Droid, Pi, Oh My Pi, ZCode, Snow, Reasonix, Trae, Grok, Kimi Code]
 
@@ -382,8 +327,8 @@ Inline 模式不派发 implement/check 子代理。
 
 - 规划或需求不清晰 -> `trellis-brainstorm`。
 - 编辑前 -> `trellis-before-dev`；编辑后 -> `trellis-check`。
-- 重复调试 -> `trellis-break-loop`；更新任何 Spec 前先审查候选归属。只有用户确认由项目本地 Spec 负责后，才加载 `trellis-update-spec`。
-- 任务范围、事实、技术栈、风险或验证目标发生实质变化时，继续之前重新评估 `prd.md` 中的 Skill 路由和复用决策；普通阶段转换只读取已有决定。
+- 重复调试 -> `trellis-break-loop`；用户确认更新本地 Spec 后 -> `trellis-update-spec`。
+- 任务范围、技术栈、风险或验证目标发生变化时，重新评估 `prd.md` 中的 Skill 路由。
 
 [/codex-inline, Kilo, Antigravity, Devin]
 
@@ -391,7 +336,7 @@ Inline 模式不派发 implement/check 子代理。
 
 - 同意创建任务不等于同意实现；实现必须等待产物审查通过并执行 `task.py start`。
 - 只有 PRD 对轻量任务是有效的；复杂任务需要 `design.md` 和 `implement.md`。
-- 规划必须持久化到任务产物；完成检查并在 `result.md` 记录实际结果后，才能报告任务完成。
+- 规划必须写入任务产物；发生实际修改时，完成检查并记录 `result.md` 后才能报告完成。
 
 ### 加载步骤详情
 
@@ -432,6 +377,8 @@ python3 ./.trellis/scripts/task.py create "<task title>" --slug <name>
 
 加载 `trellis-brainstorm` Skill，并按照该 Skill 的指引与用户交互探索需求。
 
+开始需求探索前，优先读取项目 README。未经用户明确允许不得修改 README；README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
+
 brainstorm Skill 会引导你：
 - 一次只问一个问题
 - 能研究确认的内容优先研究，不直接询问用户
@@ -441,9 +388,7 @@ brainstorm Skill 会引导你：
 - 保持 `prd.md` 只关注需求和验收标准
 - 复杂任务必须在开始实现前生成 `design.md` 和 `implement.md`
 
-需求和验收标准足够清晰后，发现当前会话可用的全局 Skill，并把 Registry 的 `## Skill 路由` 和 `## 复用决策` 表加入 `prd.md`。按能力类别评估候选 Skill，再独立判断是否需要当前项目事实或参考 Demo。实现开始前，用户可以修正任一项路由结论。
-
-需要查询 Demo 时，记录选中的参考、复用边界以及被拒绝的板级/产品事实。如果 Demo 与当前权威项目事实冲突，以当前事实为准并记录冲突。
+需求和验收标准清晰后，从当前会话声明的 Skill 中选择实际相关项，按 Registry 的四列表格写入 `prd.md`。实现开始前，用户可以修正路由结论。
 
 考虑父子任务拆分时：
 - 一个请求包含多个可独立验证的交付物时使用父任务。
@@ -542,14 +487,6 @@ python3 ./.trellis/scripts/task.py add-context "$TASK_DIR" check "<path>" "<reas
 
 完成产物审查后，将任务状态改为 `in_progress`：
 
-运行 `start` 前，验证任务产物，并将验证结果记录到 `implement.md`：
-
-```bash
-python3 ./.trellis/scripts/task.py validate <task-dir>
-```
-
-如果验证报告产物、上下文清单或状态不完整，返回对应的规划步骤。不要把运行时的兼容性容忍当成规划已就绪。
-
 ```bash
 python3 ./.trellis/scripts/task.py start <task-dir>
 ```
@@ -566,15 +503,14 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 
 | 条件 | 必需 |
 |------|:---:|
-| `prd.md` exists | ✅ |
+| `prd.md` 已存在 | ✅ |
 | `prd.md` 记录了 Skill 发现和路由 | ✅ |
-| `prd.md` records current-project / Demo reuse decisions | ✅ |
-| 对应阶段已加载必需的规划/实现 Skill | ✅ |
+| 已加载规划阶段需要的 Skill | ✅ |
 | 用户确认任务可以进入实现阶段 | ✅ |
-| `task.py start` has been run (status = in_progress) | ✅ |
+| 已执行 `task.py start`（状态为 `in_progress`） | ✅ |
 | `research/` 有研究产物（复杂任务） | 建议 |
-| `design.md` exists (complex tasks) | ✅ |
-| `implement.md` exists (complex tasks) | ✅ |
+| `design.md` 已存在（复杂任务） | ✅ |
+| `implement.md` 已存在（复杂任务） | ✅ |
 
 [Claude Code, Cursor, OpenCode, codex-sub-agent, Kiro, Gemini, Qoder, CodeBuddy, Copilot, Droid, Pi, Oh My Pi, ZCode, Snow, Reasonix, Trae, Grok, Kimi Code]
 
@@ -636,8 +572,8 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 [codex-inline, Kilo, Antigravity, Devin]
 
 1. 加载 `trellis-before-dev` Skill，读取项目指南。
-2. 读取 `{TASK_DIR}/prd.md`（包括其中的 `## Skill 路由` 和 `## 复用决策`），然后读取存在时的 `design.md` 和 `implement.md`。
-3. 编辑前加载分配给实现或验证阶段的所有必需 Skill；条件性 Skill 在触发条件成立并记录后才能加载。
+2. 读取 `{TASK_DIR}/prd.md`（包括 `## Skill 路由`），然后读取存在时的 `design.md` 和 `implement.md`。
+3. 编辑前加载实现阶段的自动 Skill；条件 Skill 在触发后加载。
 4. 查阅 `{TASK_DIR}/research/` 下的资料。
 5. 按照已审查的产物实现代码。
 6. 运行项目 lint 和类型检查。
@@ -677,7 +613,7 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 
 **最终检查（Phase 3.4 提交前）**：任务最后一次 2.2 必须覆盖全部变更范围，不能只检查最新一批实现。使用 `python3 ./.trellis/scripts/get_context.py --mode packages` 列出所有受影响的包，然后加载每个包的 Spec 索引中的质量检查部分。这可以发现中途局部 2.2 无法发现的跨层/多包问题。
 
-每完成一批编码，都要运行当前 Skill 路由要求的检查。如果条件性 Skill 没有触发，在 `implement.md` 中记录原因；“未使用”不能证明已经通过必需的测试、构建、审查或外部验证。
+每完成一批编码，都要运行项目检查和已加载 Skill 要求的验证。
 
 #### 2.3 回滚 `[on demand]`
 
@@ -685,43 +621,26 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 - 实现出现错误 -> 回退代码，重新执行 2.1。
 - 需要更多研究 -> 按 Phase 1.2 进行研究，并将结论写入 `research/`。
 
-### 外部验证与失败停止
+#### 2.4 记录结果 `[conditional · once]`
 
-当结论依赖设备、部署、构建产物、客户端、对端系统、网络服务或其他外部系统时，在请求验证前，先在 `implement.md` 中记录最小测试卡：
-
-```text
-基线：<提交 / 构建产物 / 目标设备或对端版本>
-假设：<本轮要验证的唯一根因或行为>
-唯一变量：<相对基线只改变了什么>
-预期现象：<可观察、可判定的结果>
-实际结果：<通过 / 失败 / 未执行，以及原始日志、图片或路径>
-```
-
-- 一次外部测试只改变一个可归因变量。存在依赖关系的变化要拆成多张测试卡。
-- 同一可观察现象连续两张测试卡失败后，停止继续修改该路径的产品代码。加载已路由的诊断能力和 `trellis-break-loop`，记录已确认事实、已排除假设、按优先级排序的新假设，以及重试前的下一个最小实验。
-- 不要把本地构建、日志或代码路径说成外部功能验证。代码验证、事实确认和外部/运行时验证必须分开记录。
-
-#### 2.4 记录结果 `[required · once]`
-
-创建或更新最终结果前输出 `[trellis] 阶段=收尾 动作=进入`。每个任务只输出一次阶段进入标记。
-
-完成最终全范围检查后，创建或更新 `{TASK_DIR}/result.md`。记录实际结果，不要记录计划结果，也不要复制 diff：
+发生实际文件修改时，完成最终检查后输出一次 `[trellis] 阶段=收尾 动作=进入`，并创建 `{TASK_DIR}/result.md`：
 
 ```markdown
-# 变更结果
+# 任务结果
 
 ## 基本信息
 
-- 完成日期：YYYY-MM-DD
+- 日期：YYYY-MM-DD
 - 变更类型：功能 / Bug修复 / 重构 / 文档 / 构建
+- 模块：<模块或范围>
 
 ## 修改原因
 
-<引用 PRD 中的目标或问题，说明为什么必须修改。>
+<为什么需要修改。>
 
-## 实际修改
+## 实际结果
 
-<说明最终行为、关键边界和与原计划的差异。>
+<最终行为发生了什么变化。>
 
 ## 验证结果
 
@@ -731,49 +650,27 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 - 外部或实物验证：通过 / 失败 / 未执行
 - 未验证项：<没有则写“无”>
 
-## Bug分析
+## Bug 分析
 
 - 异常现象：<非 Bug 任务删除本节>
-- 已确认根因：
+- 根因：
 - 修复方式：
 - 防止复发：
 
-## 复用记录
+## 长期结论
 
-- Demo：未查询 / 参考路径及复用边界
-- 项目决策：无 / 已记录 `DEC-NNN`
-
-## 持久化候选
-
-本次无持久化候选。
+<仅存在用户确认的长期决策、项目事实或项目编码约定候选时保留。>
 ```
 
-- 每个完成的工作任务都必须有 `result.md`，包括轻量任务。未验证的工作必须明确写为 `未执行`；代码检查或构建成功不能改称为运行时、外部或实物验证。
-- 存在长期候选时，用下表替换 `本次无持久化候选`。Phase 3.3 会在写入前完成归属分类。没有候选时保留这一行结论，不要创建空表。
-
-  ```markdown
-  | 候选ID | 核心结论 | 证据 | 建议归属 | 验证状态与边界 | 处理状态 |
-  |---|---|---|---|---|---|
-  | C1 | `<可复用或长期生效的结论>` | `<result、代码、测试或用户确认>` | `<项目决策 / 全局 Skill / 本地 Spec / README事实 / 仅任务>` | `<验证状态、适用与不适用边界>` | `<待分类 / 已新增 / 已更新 / 待确认 / 已跳过 / 失败>` |
-  ```
-- Bug 结果只有在证据闭合“现象 -> 根因 -> 修复 -> 验证”链路时，才能写 `已确认根因`。否则把未解决的假设写入 `未验证项`。
-- 如果任务改变用户可见功能、协议行为、持久化数据或状态机行为，或修复了 Bug，更新对应的项目变更记录，并新增一行日期、类型、模块、原因、实际结果、验证状态和任务路径。纯格式、注释和不改变行为的重构只保留在 `result.md` 和 Git 中。
-- 如果用户明确确认了会影响后续工作的长期项目技术/产品决策，并且该结论不属于已有等价格式，则更新对应的项目决策记录。使用连续 ID（`DEC-001`、`DEC-002` 等）。被替代的决策保留原行，将状态改为 `已替代（DEC-NNN）`，再新增一行；不要重写决策历史。
-
-  ```markdown
-  | ID | 日期 | 状态 | 领域 | 决策 | 原因 | 影响范围 | 关联任务 |
-  |---|---|---|---|---|---|---|---|
-  | DEC-001 | YYYY-MM-DD | 生效 | `<模块或领域>` | `<确认结论>` | `<选择原因>` | `<后续受影响范围>` | `<Trellis任务路径>` |
-  ```
-
-- 不要把实现细节、任务计划、未确认选项、临时绕过方案、项目事实、编码约定或跨项目经验写入项目决策记录。它们应根据归属分别留在任务产物、权威项目文档、项目本地 Spec 或全局 Skill 中。
-- Git 仍然是精确 diff 和提交时间的来源。不要在 `result.md` 或项目变更记录中逐文件重复记录修改内容。
+- 没有实际文件修改时不创建 `result.md`。
+- 未执行的验证必须如实记录，不能用代码检查或构建结果代替外部验证。
+- `result.md` 记录结果和原因，不复制 Git diff。
 
 ---
 
 ## Phase 3: 收尾
 
-目标：确保代码质量，记录经验，并完成工作记录。
+目标：确保代码质量，更新必要的项目记录，并完成任务收尾。
 
 #### 3.2 调试回顾 `[on demand]`
 
@@ -784,87 +681,48 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 
 目标是记录调试经验，避免同类问题再次出现。
 
-#### 3.3 候选归属与长期记录更新 `[required · once]`
+#### 3.3 项目记录与 Spec 判断 `[required · once]`
 
-读取 `{TASK_DIR}/result.md`，检查本任务是否产生了值得记录的长期结论：
-- 新发现的模式或约定。
-- 遇到的陷阱。
-- 新的技术决策。
-- 已验证的根因、修复方式或跨项目经验。
+发生实际修改时读取 `{TASK_DIR}/result.md`，按以下规则处理：
 
-如果 `result.md` 写明 `本次无持久化候选`，记录 Phase 3.3 已完成，不创建表格并继续。否则先对每个候选完成归属分类再写入。`result.md` 中的“持久化候选”表是任务事实源，下面示例说明如何作出归属决定：
+- 功能变化、Bug 修复和用户确认的长期决策，自动追加到 `docs/项目记录/项目记录.md`；没有符合内容时不创建或更新该文件。
+- 项目记录只供用户快速阅读，不作为 AI 的事实来源；详细依据链接到本任务的 `result.md`。
+- 发现长期项目编码约定时，先询问用户。只有用户确认后，才加载 `trellis-update-spec` 并更新 `.trellis/spec/`。
+- 需要修改 README 时停止并询问用户；本 Workflow 不修改 Skill 定义。
 
-| 候选内容 | 证据 | 建议归属 | 处理状态 |
-|---|---|---|---|
-| `<结论>` | `<result.md、代码定位、测试或已确认事实>` | 项目决策记录 / 全局 Skill / 项目本地 Spec / README项目事实 / 仅任务记录 | `<已处理 / 待用户确认 / 跳过及原因>` |
+项目记录统一使用：
 
-- 用户确认、长期有效并影响后续任务的项目技术/产品决策，归入对应的项目决策记录。讨论历史和任务内选择保留在任务产物中。长期意图不清晰时，写入前询问用户。
-- 已验证的根因、修复方式和陷阱保留在 `result.md`，除非它们同时形成了明确的项目决策、项目本地约定、项目事实或由全局 Skill 负责的可复用方法。
-- 全局可复用方法只能更新所属 Skill，不要复制到 `.trellis/spec/`。
-- 只有用户确认某候选是长期项目编码约定或 Trellis 基线的项目化细化后，才加载 `trellis-update-spec` 并写入 `.trellis/spec/`。
-- 已确认的项目事实归入 README 或其他权威项目文档。
-- 未验证、暂停、一次性或临时的调试记录保留在 `result.md`、`research/` 或验证状态中，不进入长期记录。
-- 没有长期候选时，在 `result.md` 保留 `本次无持久化候选`。
-- 任务仍有未解决的归属决定时，不要继续提交或归档。
+```markdown
+| 日期 | 类型 | 模块 | 变更或决策 | 原因 | 验证状态 | 任务结果 |
+|---|---|---|---|---|---|---|
+| YYYY-MM-DD | 功能 / Bug / 决策 | `<模块>` | `<简要内容>` | `<原因>` | `<状态>` | `<result.md 链接>` |
+```
 
 #### 3.4 提交修改 `[required · once, user-confirmed]`
 
-**长期记录前置检查**：拟定提交前，确认 `result.md` 已存在，并询问本任务是否修复了 Bug、形成了长期项目决策，或发现了需要归属处理的非显然长期结论。如果有，先返回 Phase 3.3。候选归属未处理完时，不要归档任务。
-
-AI 为本任务的代码变更准备分批提交计划。提交属于外部状态变化，需要单独的用户确认；`批准实施` 和 `批准检查` 都不包含提交授权。先提交工作代码，然后停止并等待单独的归档授权。不要从一次模糊确认中推断要同时执行工作提交、归档、日志记录或推送。
-
-**执行步骤**：
+有实际修改时，完成 `result.md` 和适用的项目记录或 Spec 处理后，再准备提交：
 
 1. **检查工作区脏状态**：
    ```bash
    git status --porcelain
    ```
-   记录所有脏路径。如果工作区干净，跳到 3.5。
+   工作区干净时跳到 3.5。
 
-2. **从最近历史学习提交风格**（让拟定的提交信息与仓库一致）：
+2. **读取最近提交风格**：
    ```bash
    git log --oneline -5
    ```
-   记录前缀约定（`feat:` / `fix:` / `chore:` / `docs:` 等）、语言（中文/English）和长度风格。
-
-3. **将脏文件分成两组**：
-   - **本会话由 AI 修改**：本会话中通过 Edit/Write/Bash 工具写入或修改的文件，明确知道改了什么以及为什么改。
-   - **无法识别**：本会话没有触碰的脏文件（可能是用户手动修改、之前遗留的 WIP 或无关工作）。不要静默把它们加入提交。
-
-4. **拟定提交计划**。把本会话修改的文件按逻辑分成多个提交（一个连贯变更单元一个提交，不是一个文件一个提交）。每项包含 `<commit message>` 和文件列表，并在末尾单独列出无法识别的文件。
-
-5. **只展示一次计划，并请求一次性提交确认**。格式如下：
-   ```
-提交计划（按执行顺序）：
-  1. <提交信息>
-        - <file>
-        - <file>
-  2. <提交信息>
-        - <file>
-
-无法识别的脏文件（不会加入任何提交，请确认包含/排除）：
-     - <file>
-     - <file>
-
-回复 `ok` / “行”只执行这些工作提交；回复修改意见，或“我自己来”/`manual` 取消。
-   ```
-
-6. **用户确认后**：按顺序对每一批运行 `git add <files>` 和 `git commit -m "<msg>"`。不要 amend，不要推送。
-
-7. **工作提交完成后**：输出 `[trellis] 阶段=归档 动作=等待用户确认 状态=待归档` 并停止。本轮不要调用 `task.py archive`、`/finish-work`、`add_session.py` 或 `git push`。
-
-8. **用户拒绝时**（回复“不行”/“我自己来”/“manual”，或对计划提出异议）：停止，不要重新拟定第二份计划。由用户自行提交；在用户明确决定下一个生命周期动作前，任务保持进行中。
-
-**规则**：
-- 任何地方都不能使用 `git commit --amend`，采用三阶段三类提交流程（工作提交 -> 归档提交 -> 日志提交）。
-- 此步骤绝不推送远程。
-- 如果用户只要求修改提交信息而接受文件分组，修改信息后重新确认一次；如果用户拒绝文件分组，转为用户手动处理。
-- 分批计划只请求一次确认，不要每个提交分别询问。
-- 提交确认只授权展示的工作提交，不授权归档、日志/会话记录或推送。
+3. 区分本任务修改和无法确认归属的脏文件；后者不得自动加入提交。
+4. 按一个提交只解决一个问题的原则拟定提交计划，列出提交信息和文件。
+5. 输出 `[trellis] 阶段=提交 动作=等待用户确认`，等待用户当轮明确授权。
+6. 获得授权后只执行已展示的提交；禁止 amend 和推送。用户拒绝时停止。
+7. 提交完成后输出 `[trellis] 阶段=收尾 动作=等待用户确认` 并停止，不在同一轮执行收尾。
 
 #### 3.5 收尾提醒
 
-归档是单独的用户授权操作。调用 `/finish-work` 或 `task.py archive` 前，确认所有外部/实物验收项已完成。如果仍有未决项，保持任务进行中并报告；只有用户明确批准带未决项归档后才可归档。归档获授权后输出 `[trellis] 阶段=归档 动作=执行 状态=用户已确认`；除非用户另行授权记账提交，否则使用 `task.py archive <task> --no-commit`。会话记录同样需要单独授权，不能推断执行。推送从不属于收尾流程，必须由用户单独提出。
+用户明确同意收尾后，输出 `[trellis] 阶段=收尾 动作=执行`，再执行 `/finish-work` 或等价的官方收尾流程。该授权包含任务归档、会话记录及其正常记账提交，不包含推送。
+
+存在未完成的外部、实物或用户验收时，默认保持任务进行中；只有用户明确允许带未验证项收尾时才执行。推送必须由用户单独要求。
 
 ---
 
@@ -896,7 +754,7 @@ AI 为本任务的代码变更准备分批提交计划。提交属于外部状�
 
 ### 添加自定义状态
 
-Add a new block:
+添加一个新标签块：
 
 ```
 [workflow-state:my-status]

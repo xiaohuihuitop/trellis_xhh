@@ -5,7 +5,7 @@
       "id": "empty-spec",
       "type": "spec",
       "name": "空白项目 Spec 模板",
-      "description": "仅用于避免 Trellis 自动生成通用 backend/frontend Spec；不包含领域代码规则。领域规则由用户环境中已安装的全局 Skill 提供。",
+      "description": "仅用于避免 Trellis 自动生成通用 backend/frontend Spec；不包含领域代码规则。领域规则由当前会话中适用的 Skill 提供。",
       "path": "marketplace/specs/empty",
       "tags": ["empty", "workflow"]
     },
@@ -13,7 +13,7 @@
       "id": "skill-routed-native",
       "type": "workflow",
       "name": "原生工作流与 Skill 路由",
-      "description": "以 Trellis native Workflow 为基线，保留 auto/inline 原生执行分支；路由全局 Skill 与 Demo，并记录逐候选结果、项目变更和长期项目决策。",
+      "description": "以 Trellis native Workflow 为基线，保留 auto/inline 原生执行分支；增加当前会话 Skill 路由、任务结果追溯、统一项目记录和授权边界。",
       "path": "workflows/skill-routed-native.md",
       "tags": ["native", "codex", "skill-routing", "traceability", "trellis"]
     }
