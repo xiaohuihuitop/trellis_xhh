@@ -40,7 +40,7 @@ Trellis 只评估当前会话已经声明可用的 Skill，不区分全局或项
 
 ## Registry 扩展：事实与项目 Spec 边界
 
-- README 是项目事实入口，任务开始时优先读取；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的实现并请用户确认。
+- README 是项目事实入口，任务开始时优先读取；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
 - `.trellis/spec/` 只保存用户确认的项目编码约定或 Trellis 基线的项目化细化；写入前必须得到用户确认。
 - `prd.md`、`design.md`、`implement.md`、`result.md` 和 `research/` 只记录当前任务。
 - `docs/项目记录/项目记录.md` 只面向用户快速阅读，不作为 AI 的项目事实或开发上下文。AI 查询历史时读取对应任务的 `result.md`。
@@ -173,7 +173,7 @@ python3 ./.trellis/scripts/get_context.py --mode phase --step <X.Y>  # detailed 
   编辑检查清单：
     - 修改 [workflow-state:STATUS] 标签块时，同时检查所属阶段的
       `[required · once]` 步骤是否同步
-    - 编辑后运行 `trellis update`，将新正文按标签块替换到下游项目
+    - Registry 模板编辑后提交并推送；下游项目使用 `trellis workflow --template skill-routed-native --marketplace <Registry地址> --force` 重新安装。`trellis update` 不负责分发非原生 Workflow
     - 完整运行时契约：
       .trellis/spec/cli/backend/workflow-state-contract.md
 -->
@@ -232,7 +232,7 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 
 [workflow-state:planning]
 加载 `trellis-brainstorm`，保持在规划阶段。
-优先读取项目 README；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
+本任务尚未读取项目 README 时优先读取；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
 轻量任务：可以只使用 `prd.md`。复杂任务：完成 `prd.md`、`design.md` 和 `implement.md`，并在 `task.py start` 前请求审查。
 多个交付物：考虑使用父任务和可独立验证的子任务；依赖关系必须写入子任务产物，不能依靠树的位置暗示。
 子代理模式：在 start 前整理 `implement.jsonl` 和 `check.jsonl`，作为 Spec/研究清单。
@@ -246,7 +246,7 @@ Phase 3: 收尾    → 确定记录归属，在允许时更新长期记录，提
 
 [workflow-state:planning-inline]
 加载 `trellis-brainstorm`，保持在规划阶段。
-优先读取项目 README；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
+本任务尚未读取项目 README 时优先读取；未经用户明确允许不得修改。README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
 轻量任务：可以只使用 `prd.md`。复杂任务：完成 `prd.md`、`design.md` 和 `implement.md`，并在 `task.py start` 前请求审查。
 多个交付物：考虑使用父任务和可独立验证的子任务；依赖关系必须写入子任务产物，不能依靠树的位置暗示。
 Inline 模式：跳过 JSONL 整理；Phase 2 通过 `trellis-before-dev` 读取产物和 Spec。
@@ -268,7 +268,7 @@ Inline 模式：跳过 JSONL 整理；Phase 2 通过 `trellis-before-dev` 读取
 
 [workflow-state:in_progress]
 工具：`trellis-implement` / `trellis-research` 是子代理类型；`trellis-check` 同时存在代理和 Skill 形式，代码修改后优先使用代理检查。
-流程：实施 -> 检查并修复 -> 有实际修改时记录 `result.md` -> 更新项目记录或确认本地 Spec -> 请求提交授权 -> 请求收尾授权。
+流程：实施 -> 检查并修复 -> 有实际修改时记录 `result.md` -> 处理项目记录，并判断是否存在需要用户确认的本地 Spec 更新 -> 请求提交授权 -> 请求收尾授权。
 主会话默认派发 implement/check 子代理。子代理自豁免：如果当前已经是 `trellis-implement`，不要再派发 `trellis-implement` 或 `trellis-check`；如果当前已经是 `trellis-check`，不要再派发 `trellis-check` 或 `trellis-implement`。派发动作只由主会话执行。
 派发提示必须以 `Active task: <task path from task.py current>` 开头。上下文读取顺序：JSONL 条目 -> `prd.md` -> 存在时读取 `design.md` -> 存在时读取 `implement.md`。
 派发前读取 `prd.md` 中的 Skill 路由，确保实现或检查代理可以使用任务要求的 Skill。最终集成和结论由主会话负责。
@@ -279,7 +279,7 @@ Inline 模式：跳过 JSONL 整理；Phase 2 通过 `trellis-before-dev` 读取
      主会话直接编辑代码，不派发子代理。 -->
 
 [workflow-state:in_progress-inline]
-流程：`trellis-before-dev` -> 编辑 -> `trellis-check` -> 验证 -> 有实际修改时记录 `result.md` -> 更新项目记录或确认本地 Spec -> 请求提交授权 -> 请求收尾授权。
+流程：`trellis-before-dev` -> 编辑 -> `trellis-check` -> 验证 -> 有实际修改时记录 `result.md` -> 处理项目记录，并判断是否存在需要用户确认的本地 Spec 更新 -> 请求提交授权 -> 请求收尾授权。
 Inline 模式不派发 implement/check 子代理。
 上下文读取顺序：`prd.md` -> 存在时读取 `design.md` -> 存在时读取 `implement.md`，以及由 Skill 加载的相关 Spec/研究资料。
 执行 `trellis-before-dev` 后读取 `prd.md` 中的 Skill 路由，在编辑前加载自动 Skill；条件 Skill 在触发后加载。
@@ -288,7 +288,7 @@ Inline 模式不派发 implement/check 子代理。
 ### Phase 3 摘要：收尾
 - 3.2 调试回顾 `[on demand]`
 - 3.3 项目记录与 Spec 判断 `[required · once]`
-- 3.4 提交修改 `[required · once]`
+- 3.4 提交修改 `[required · once, user-confirmed]`
 - 3.5 收尾提醒
 
 > 注意：3.1 已并入 2.2（最后一轮全范围检查）和 3.4（提交前置检查）。保留原编号是为了不破坏外部引用。
@@ -377,7 +377,7 @@ python3 ./.trellis/scripts/task.py create "<task title>" --slug <name>
 
 加载 `trellis-brainstorm` Skill，并按照该 Skill 的指引与用户交互探索需求。
 
-开始需求探索前，优先读取项目 README。未经用户明确允许不得修改 README；README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
+开始需求探索前，如果本任务尚未读取项目 README，则优先读取。未经用户明确允许不得修改 README；README 与代码、原理图、产品文档或权威 API 冲突时，停止受影响的规划和实现并请用户确认。
 
 brainstorm Skill 会引导你：
 - 一次只问一个问题
@@ -628,21 +628,21 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 ```markdown
 # 任务结果
 
-## 基本信息
+**基本信息**
 
 - 日期：YYYY-MM-DD
 - 变更类型：功能 / Bug修复 / 重构 / 文档 / 构建
 - 模块：<模块或范围>
 
-## 修改原因
+**修改原因**
 
 <为什么需要修改。>
 
-## 实际结果
+**实际结果**
 
 <最终行为发生了什么变化。>
 
-## 验证结果
+**验证结果**
 
 - 代码检查：通过 / 失败 / 未执行
 - 构建验证：通过 / 失败 / 未执行
@@ -650,14 +650,14 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 - 外部或实物验证：通过 / 失败 / 未执行
 - 未验证项：<没有则写“无”>
 
-## Bug 分析
+**Bug 分析**
 
 - 异常现象：<非 Bug 任务删除本节>
 - 根因：
 - 修复方式：
 - 防止复发：
 
-## 长期结论
+**长期结论**
 
 <仅存在用户确认的长期决策、项目事实或项目编码约定候选时保留。>
 ```
@@ -686,7 +686,8 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 发生实际修改时读取 `{TASK_DIR}/result.md`，按以下规则处理：
 
 - 功能变化、Bug 修复和用户确认的长期决策，自动追加到 `docs/项目记录/项目记录.md`；没有符合内容时不创建或更新该文件。
-- 项目记录只供用户快速阅读，不作为 AI 的事实来源；详细依据链接到本任务的 `result.md`。
+- 项目记录只供用户快速阅读，不作为 AI 的事实来源；任务结果列记录稳定的任务目录名，不记录会在归档时变化的 `result.md` 路径。
+- 需要读取详细结果时，使用任务目录名在 `.trellis/tasks/**/<任务目录名>/result.md` 中定位；任务归档不会改变目录名。
 - 发现长期项目编码约定时，先询问用户。只有用户确认后，才加载 `trellis-update-spec` 并更新 `.trellis/spec/`。
 - 需要修改 README 时停止并询问用户；本 Workflow 不修改 Skill 定义。
 
@@ -695,7 +696,7 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 ```markdown
 | 日期 | 类型 | 模块 | 变更或决策 | 原因 | 验证状态 | 任务结果 |
 |---|---|---|---|---|---|---|
-| YYYY-MM-DD | 功能 / Bug / 决策 | `<模块>` | `<简要内容>` | `<原因>` | `<状态>` | `<result.md 链接>` |
+| YYYY-MM-DD | 功能 / Bug / 决策 | `<模块>` | `<简要内容>` | `<原因>` | `<状态>` | `<MM-DD-task-name>` |
 ```
 
 #### 3.4 提交修改 `[required · once, user-confirmed]`
@@ -750,7 +751,7 @@ python3 ./.trellis/scripts/task.py start <task-dir>
 
 ### 修改每轮提示文字
 
-直接编辑对应 `[workflow-state:STATUS]` 标签块的正文。编辑后，如果你是模板维护者则运行 `trellis update`；如果只是自定义自己的项目，则重启 AI 会话。不需要修改脚本。
+直接编辑对应 `[workflow-state:STATUS]` 标签块的正文。Registry 模板维护者应提交并推送修改，再让下游项目通过 `trellis workflow --template skill-routed-native --marketplace <Registry地址> --force` 重新安装；`trellis update` 不会拉取非原生 Workflow。如果只是修改单个项目自己的 Workflow，重启 AI 会话即可，不需要修改脚本。
 
 ### 添加自定义状态
 
